@@ -1,0 +1,320 @@
+<!-- templates/notifications/preferences.html -->
+{% extends "layout.html" %}
+
+{% block title %}Notification Preferences - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h3 class="white-text">Notification Preferences</h3>
+            <p class="grey-text text-lighten-2">Customize how and when you receive notifications</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card" style="padding: 30px;">
+                <form method="POST" action="{{ url_for('notifications.preferences') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Channel Preferences -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #2196f3; padding-bottom: 10px;">
+                                <i class="material-icons left">settings_input_antenna</i>
+                                Delivery Channels
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12 m4">
+                            <p>
+                                <label>
+                                    {{ form.enable_push(class="filled-in") }}
+                                    <span class="white-text">
+                                        <i class="material-icons left cyan-text">notifications</i>
+                                        Push Notifications
+                                    </span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m4">
+                            <p>
+                                <label>
+                                    {{ form.enable_email(class="filled-in") }}
+                                    <span class="white-text">
+                                        <i class="material-icons left orange-text">email</i>
+                                        Email Notifications
+                                    </span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m4">
+                            <p>
+                                <label>
+                                    {{ form.enable_sms(class="filled-in") }}
+                                    <span class="white-text">
+                                        <i class="material-icons left green-text">sms</i>
+                                        SMS Notifications
+                                    </span>
+                                </label>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Notification Type Preferences -->
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #4caf50; padding-bottom: 10px;">
+                                <i class="material-icons left">category</i>
+                                Notification Types
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            {% for field in [form.enable_medication_reminders, form.enable_refill_reminders, 
+                                            form.enable_low_stock_alerts, form.enable_missed_dose_alerts,
+                                            form.enable_interaction_alerts] %}
+                            <p>
+                                <label>
+                                    {{ field(class="filled-in") }}
+                                    <span class="white-text">{{ field.label.text }}</span>
+                                </label>
+                            </p>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            {% for field in [form.enable_contraindication_alerts, form.enable_health_alerts,
+                                            form.enable_appointment_reminders, form.enable_daily_checkin_reminders,
+                                            form.enable_wellness_alerts, form.enable_ai_insights] %}
+                            <p>
+                                <label>
+                                    {{ field(class="filled-in") }}
+                                    <span class="white-text">{{ field.label.text }}</span>
+                                </label>
+                            </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Timing Preferences -->
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #ff9800; padding-bottom: 10px;">
+                                <i class="material-icons left">access_time</i>
+                                Timing Settings
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.reminder_lead_minutes(class="white-text") }}
+                                {{ form.reminder_lead_minutes.label(class="white-text") }}
+                                <span class="helper-text white-text">How many minutes before a scheduled event to send reminder</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.snooze_duration_minutes(class="white-text") }}
+                                {{ form.snooze_duration_minutes.label(class="white-text") }}
+                                <span class="helper-text white-text">Default snooze duration in minutes</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quiet Hours -->
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #9c27b0; padding-bottom: 10px;">
+                                <i class="material-icons left">bedtime</i>
+                                Quiet Hours
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    {{ form.quiet_hours_enabled(class="filled-in") }}
+                                    <span class="white-text">Enable Quiet Hours</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.quiet_start(class="timepicker white-text") }}
+                                {{ form.quiet_start.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.quiet_end(class="timepicker white-text") }}
+                                {{ form.quiet_end.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12">
+                            <p class="grey-text text-lighten-2">
+                                <i class="material-icons tiny">info</i>
+                                Critical alerts will still come through if "Override Quiet Hours" is enabled
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Daily Schedule -->
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #00bcd4; padding-bottom: 10px;">
+                                <i class="material-icons left">schedule</i>
+                                Daily Schedule
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.days_of_week(class="white-text") }}
+                                {{ form.days_of_week.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.notification_start_time(class="timepicker white-text") }}
+                                {{ form.notification_start_time.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.notification_end_time(class="timepicker whitepicker white-text") }}
+                                {{ form.notification_end_time.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Settings -->
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #607d8b; padding-bottom: 10px;">
+                                <i class="material-icons left">tune</i>
+                                Advanced Settings
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <p>
+                                <label>
+                                    {{ form.smart_reminders(class="filled-in") }}
+                                    <span class="white-text">Smart Reminders (AI-optimized timing)</span>
+                                </label>
+                            </p>
+                            
+                            <p>
+                                <label>
+                                    {{ form.allow_weekend_notifications(class="filled-in") }}
+                                    <span class="white-text">Weekend Notifications</span>
+                                </label>
+                            </p>
+                            
+                            <p>
+                                <label>
+                                    {{ form.critical_alerts_always(class="filled-in") }}
+                                    <span class="white-text">Critical Alerts Always On</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <p>
+                                <label>
+                                    {{ form.batch_notifications(class="filled-in") }}
+                                    <span class="white-text">Batch Multiple Notifications</span>
+                                </label>
+                            </p>
+                            
+                            <p>
+                                <label>
+                                    {{ form.vibration_enabled(class="filled-in") }}
+                                    <span class="white-text">Enable Vibration</span>
+                                </label>
+                            </p>
+                            
+                            <p>
+                                <label>
+                                    {{ form.sound_enabled(class="filled-in") }}
+                                    <span class="white-text">Enable Sound</span>
+                                </label>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Override -->
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #f44336; padding-bottom: 10px;">
+                                <i class="material-icons left">emergency</i>
+                                Emergency Settings
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <p>
+                                <label>
+                                    {{ form.emergency_contact_override(class="filled-in") }}
+                                    <span class="white-text">Allow Emergency Contact Notifications</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <p>
+                                <label>
+                                    {{ form.override_quiet_hours(class="filled-in") }}
+                                    <span class="white-text">Override Quiet Hours for Urgent Alerts</span>
+                                </label>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row" style="margin-top: 40px;">
+                        <div class="col s12 center-align">
+                            {{ form.submit(class="btn waves-effect waves-light cyan darken-2", style="margin-right: 10px;") }}
+                            
+                            <a href="{{ url_for('notifications.reset_preferences') }}" 
+                               class="btn waves-effect waves-light grey darken-2"
+                               onclick="return confirm('Reset all preferences to defaults?')">
+                                Reset to Defaults
+                            </a>
+                            
+                            <a href="{{ url_for('notifications.index') }}" class="btn-flat white-text" style="margin-left: 10px;">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize time pickers
+        var timepickers = document.querySelectorAll('.timepicker');
+        M.Timepicker.init(timepickers, {
+            twelveHour: false,
+            autoClose: true
+        });
+        
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+    });
+</script>
+{% endblock %}

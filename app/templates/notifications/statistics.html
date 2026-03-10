@@ -1,0 +1,301 @@
+<!-- templates/notifications/statistics.html -->
+{% extends "layout.html" %}
+
+{% block title %}Notification Statistics - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h3 class="white-text">Notification Statistics</h3>
+            <p class="grey-text text-lighten-2">Analytics for {{ start_date }} to {{ end_date }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Filters -->
+        <div class="col s12 m4 l3">
+            <div class="glass-card" style="padding: 20px; margin-bottom: 20px;">
+                <h5 class="white-text">Filters</h5>
+                <form method="POST" action="{{ url_for('notifications.statistics') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="input-field">
+                        {{ form.period(class="white-text") }}
+                        {{ form.period.label(class="active white-text") }}
+                    </div>
+                    
+                    <div id="custom-dates" style="{% if form.period.data != 'custom' %}display: none;{% endif %}">
+                        <div class="input-field">
+                            {{ form.start_date(class="datepicker white-text") }}
+                            {{ form.start_date.label(class="active white-text") }}
+                        </div>
+                        
+                        <div class="input-field">
+                            {{ form.end_date(class="datepicker white-text") }}
+                            {{ form.end_date.label(class="active white-text") }}
+                        </div>
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.group_by(class="white-text") }}
+                        {{ form.group_by.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.chart_type(class="white-text") }}
+                        {{ form.chart_type.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.include_metrics(class="white-text") }}
+                        {{ form.include_metrics.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.export_format(class="white-text") }}
+                        {{ form.export_format.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="center-align">
+                        {{ form.submit(class="btn waves-effect waves-light cyan darken-2") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="col s12 m8 l9">
+            <!-- Summary Cards -->
+            <div class="row">
+                <div class="col s12 m6 l3">
+                    <div class="glass-card center-align" style="padding: 20px;">
+                        <i class="material-icons large cyan-text">notifications</i>
+                        <h5 class="white-text">{{ stats.total }}</h5>
+                        <p class="grey-text text-lighten-2">Total Notifications</p>
+                    </div>
+                </div>
+                
+                <div class="col s12 m6 l3">
+                    <div class="glass-card center-align" style="padding: 20px;">
+                        <i class="material-icons large green-text">check_circle</i>
+                        <h5 class="white-text">{{ stats.read }}</h5>
+                        <p class="grey-text text-lighten-2">Read ({{ "%.1f"|format(stats.read_percentage) }}%)</p>
+                    </div>
+                </div>
+                
+                <div class="col s12 m6 l3">
+                    <div class="glass-card center-align" style="padding: 20px;">
+                        <i class="material-icons large orange-text">error</i>
+                        <h5 class="white-text">{{ stats.action_required }}</h5>
+                        <p class="grey-text text-lighten-2">Action Required</p>
+                    </div>
+                </div>
+                
+                <div class="col s12 m6 l3">
+                    <div class="glass-card center-align" style="padding: 20px;">
+                        <i class="material-icons large red-text">done_all</i>
+                        <h5 class="white-text">{{ stats.action_taken }}</h5>
+                        <p class="grey-text text-lighten-2">Actions Taken ({{ "%.1f"|format(stats.action_rate) }}%)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row">
+                <div class="col s12">
+                    <div class="glass-card" style="padding: 20px; margin-top: 20px;">
+                        <h5 class="white-text">
+                            {% if form.group_by.data == 'type' %}
+                                Notifications by Type
+                            {% elif form.group_by.data == 'priority' %}
+                                Notifications by Priority
+                            {% elif form.group_by.data == 'day' %}
+                                Notifications by Day
+                            {% else %}
+                                Notifications by Hour
+                            {% endif %}
+                        </h5>
+                        
+                        <div class="chart-container" style="height: 300px; position: relative;">
+                            {% if form.chart_type.data == 'bar' %}
+                                <!-- Bar Chart -->
+                                <canvas id="statisticsChart"></canvas>
+                            {% elif form.chart_type.data == 'pie' %}
+                                <!-- Pie Chart -->
+                                <canvas id="statisticsChart"></canvas>
+                            {% elif form.chart_type.data == 'line' %}
+                                <!-- Line Chart -->
+                                <canvas id="statisticsChart"></canvas>
+                            {% else %}
+                                <!-- Data Table -->
+                                <table class="white-text highlight">
+                                    <thead>
+                                        <tr>
+                                            <th>{% if form.group_by.data == 'type' %}Type{% elif form.group_by.data == 'priority' %}Priority{% elif form.group_by.data == 'day' %}Day{% else %}Hour{% endif %}</th>
+                                            <th>Count</th>
+                                            <th>Percentage</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set labels = chart_data.type_labels if form.group_by.data == 'type' else chart_data.priority_labels if form.group_by.data == 'priority' else chart_data.day_labels if form.group_by.data == 'day' else chart_data.hour_labels %}
+                                        {% set data = chart_data.type_data if form.group_by.data == 'type' else chart_data.priority_data if form.group_by.data == 'priority' else chart_data.day_data if form.group_by.data == 'day' else chart_data.hour_data %}
+                                        
+                                        {% for i in range(labels|length) %}
+                                        <tr>
+                                            <td>{{ labels[i] }}</td>
+                                            <td>{{ data[i] }}</td>
+                                            <td>{{ "%.1f"|format((data[i] / stats.total * 100) if stats.total > 0 else 0) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Breakdown -->
+            <div class="row">
+                {% if form.group_by.data != 'type' %}
+                <div class="col s12 m6">
+                    <div class="glass-card" style="padding: 20px; margin-top: 20px;">
+                        <h5 class="white-text">By Type</h5>
+                        <table class="white-text highlight">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for type, count in stats.by_type.items() %}
+                                <tr>
+                                    <td>{{ type|replace('_', ' ')|title }}</td>
+                                    <td>{{ count }}</td>
+                                    <td>{{ "%.1f"|format((count / stats.total * 100) if stats.total > 0 else 0) }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if form.group_by.data != 'priority' %}
+                <div class="col s12 m6">
+                    <div class="glass-card" style="padding: 20px; margin-top: 20px;">
+                        <h5 class="white-text">By Priority</h5>
+                        <table class="white-text highlight">
+                            <thead>
+                                <tr>
+                                    <th>Priority</th>
+                                    <th>Count</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for priority, count in stats.by_priority.items() %}
+                                <tr>
+                                    <td>{{ priority|title }}</td>
+                                    <td>{{ count }}</td>
+                                    <td>{{ "%.1f"|format((count / stats.total * 100) if stats.total > 0 else 0) }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date pickers
+        var datepickers = document.querySelectorAll('.datepicker');
+        M.Datepicker.init(datepickers, {
+            format: 'yyyy-mm-dd',
+            autoClose: true
+        });
+        
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        
+        // Toggle custom dates
+        const periodSelect = document.getElementById('period');
+        const customDates = document.getElementById('custom-dates');
+        
+        periodSelect.addEventListener('change', function() {
+            customDates.style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+        
+        // Initialize chart if needed
+        {% if form.chart_type.data in ['bar', 'pie', 'line'] %}
+        const ctx = document.getElementById('statisticsChart').getContext('2d');
+        
+        {% set labels = chart_data.type_labels if form.group_by.data == 'type' else chart_data.priority_labels if form.group_by.data == 'priority' else chart_data.day_labels if form.group_by.data == 'day' else chart_data.hour_labels %}
+        {% set data = chart_data.type_data if form.group_by.data == 'type' else chart_data.priority_data if form.group_by.data == 'priority' else chart_data.day_data if form.group_by.data == 'day' else chart_data.hour_data %}
+        
+        const chartData = {
+            labels: {{ labels|tojson }},
+            datasets: [{
+                label: 'Notifications',
+                data: {{ data|tojson }},
+                backgroundColor: [
+                    '#2196f3', '#4caf50', '#ff9800', '#f44336',
+                    '#9c27b0', '#00bcd4', '#ffeb3b', '#795548'
+                ],
+                borderColor: '#ffffff',
+                borderWidth: 1
+            }]
+        };
+        
+        const chartConfig = {
+            type: '{{ form.chart_type.data }}',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#ffffff'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                }
+            }
+        };
+        
+        new Chart(ctx, chartConfig);
+        {% endif %}
+    });
+</script>
+{% endblock %}

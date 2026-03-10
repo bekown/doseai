@@ -1,0 +1,298 @@
+<!-- templates/notifications/index.html -->
+{% extends "layout.html" %}
+
+{% block title %}Notifications - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h3 class="white-text">Notifications</h3>
+            <p class="grey-text text-lighten-2">Manage all your notifications in one place</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col s12 m4 l3">
+            <div class="glass-card" style="padding: 20px; margin-bottom: 20px;">
+                <h5 class="white-text">Filters</h5>
+                <form method="GET" action="{{ url_for('notifications.index') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="input-field">
+                        {{ form.notification_type(class="white-text") }}
+                        {{ form.notification_type.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.priority(class="white-text") }}
+                        {{ form.priority.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.status(class="white-text") }}
+                        {{ form.status.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.date_range(class="white-text") }}
+                        {{ form.date_range.label(class="active white-text") }}
+                    </div>
+                    
+                    {% if form.date_range.data == 'custom' %}
+                    <div class="input-field">
+                        {{ form.start_date(class="datepicker white-text") }}
+                        {{ form.start_date.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.end_date(class="datepicker white-text") }}
+                        {{ form.end_date.label(class="active white-text") }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="input-field">
+                        {{ form.sort_by(class="white-text") }}
+                        {{ form.sort_by.label(class="active white-text") }}
+                    </div>
+                    
+                    <div class="input-field">
+                        {{ form.items_per_page(class="white-text") }}
+                        {{ form.items_per_page.label(class="active white-text") }}
+                    </div>
+                    
+                    <p>
+                        <label>
+                            {{ form.include_expired(class="filled-in") }}
+                            <span class="white-text">Include Expired</span>
+                        </label>
+                    </p>
+                    
+                    <div class="center-align">
+                        {{ form.submit(class="btn waves-effect waves-light cyan darken-2") }}
+                        <a href="{{ url_for('notifications.index') }}" class="btn-flat white-text">Clear</a>
+                    </div>
+                </form>
+                
+                <div class="divider" style="margin: 20px 0;"></div>
+                
+                <div class="center-align">
+                    <a href="{{ url_for('notifications.mark_all_read') }}" 
+                       class="btn-flat waves-effect white-text" 
+                       onclick="return confirm('Mark all notifications as read?')">
+                        <i class="material-icons left">check</i> Mark All Read
+                    </a>
+                    
+                    <a href="{{ url_for('notifications.clear_all') }}" 
+                       class="btn-flat waves-effect red-text text-lighten-2"
+                       onclick="return confirm('Clear all read notifications?')">
+                        <i class="material-icons left">delete</i> Clear All Read
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <div class="col s12 m8 l9">
+            <!-- Bulk Actions -->
+            <div class="glass-card" style="padding: 15px; margin-bottom: 20px;">
+                <form id="bulk-form" method="POST" action="{{ url_for('notifications.bulk_mark_read') }}">
+                    <div class="row valign-wrapper" style="margin-bottom: 0;">
+                        <div class="col s6">
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in" id="select-all">
+                                    <span class="white-text">Select All</span>
+                                </label>
+                            </p>
+                        </div>
+                        <div class="col s6 right-align">
+                            <button type="submit" class="btn-flat waves-effect white-text" name="action" value="read">
+                                <i class="material-icons left">check</i> Mark Read
+                            </button>
+                            <button type="button" class="btn-flat waves-effect red-text text-lighten-2" 
+                                    onclick="submitBulkDelete()">
+                                <i class="material-icons left">delete</i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Notifications -->
+            {% if notifications.items %}
+                {% for notification in notifications.items %}
+                <div class="glass-card notification-card" style="padding: 20px; margin-bottom: 15px; border-left: 4px solid {% if notification.priority == 'urgent' %}#ff4444{% elif notification.priority == 'high' %}#ff9800{% elif notification.priority == 'medium' %}#2196f3{% else %}#4caf50{% endif %};">
+                    <div class="row valign-wrapper" style="margin-bottom: 0;">
+                        <div class="col s1">
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in notification-checkbox" name="notification_ids" value="{{ notification.id }}">
+                                    <span></span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s1">
+                            {% if notification.type == 'medication_reminder' %}
+                                <i class="material-icons medium cyan-text text-lighten-2">notifications_active</i>
+                            {% elif notification.type == 'refill_reminder' %}
+                                <i class="material-icons medium orange-text">refresh</i>
+                            {% elif notification.type == 'emergency' %}
+                                <i class="material-icons medium red-text">warning</i>
+                            {% else %}
+                                <i class="material-icons medium green-text">info</i>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col s8">
+                            <h6 class="white-text" style="margin-top: 0;">
+                                {% if not notification.is_read %}<span class="new badge red" data-badge-caption="">NEW</span>{% endif %}
+                                {{ notification.title }}
+                            </h6>
+                            <p class="grey-text text-lighten-2" style="margin-bottom: 5px;">{{ notification.message }}</p>
+                            <div class="notification-meta">
+                                <span class="badge white-text" style="background-color: {% if notification.priority == 'urgent' %}#ff4444{% elif notification.priority == 'high' %}#ff9800{% elif notification.priority == 'medium' %}#2196f3{% else %}#4caf50{% endif %}; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                                    {{ notification.priority }}
+                                </span>
+                                <span class="grey-text text-lighten-1" style="margin-left: 10px;">
+                                    <i class="material-icons tiny">access_time</i>
+                                    {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </span>
+                                {% if notification.is_action_required and not notification.action_taken %}
+                                <span class="badge red lighten-1 white-text" style="margin-left: 10px; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                                    Action Required
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col s2 right-align">
+                            <div class="notification-actions">
+                                {% if not notification.is_read %}
+                                <a href="{{ url_for('notifications.mark_as_read', notification_id=notification.id) }}" 
+                                   class="btn-floating btn-small waves-effect waves-light green" title="Mark as read">
+                                    <i class="material-icons">check</i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if notification.is_action_required and not notification.action_taken %}
+                                <a href="{{ url_for('notifications.take_action', notification_id=notification.id) }}" 
+                                   class="btn-floating btn-small waves-effect waves-light blue" title="Take action">
+                                    <i class="material-icons">play_arrow</i>
+                                </a>
+                                {% endif %}
+                                
+                                <a href="#delete-modal-{{ notification.id }}" 
+                                   class="btn-floating btn-small waves-effect waves-light red modal-trigger" title="Delete">
+                                    <i class="material-icons">delete</i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Modal -->
+                <div id="delete-modal-{{ notification.id }}" class="modal glass-card-modal">
+                    <div class="modal-content">
+                        <h4 class="white-text">Delete Notification</h4>
+                        <p class="grey-text text-lighten-2">Are you sure you want to delete this notification?</p>
+                        <p class="white-text">{{ notification.title }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <form method="POST" action="{{ url_for('notifications.delete_notification', notification_id=notification.id) }}">
+                            <button type="button" class="modal-close btn-flat white-text">Cancel</button>
+                            <button type="submit" class="btn red lighten-1">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                <div class="center-align">
+                    <ul class="pagination white-text">
+                        {% if notifications.has_prev %}
+                        <li class="waves-effect">
+                            <a href="{{ url_for('notifications.index', page=notifications.prev_num, **request.args) }}">
+                                <i class="material-icons">chevron_left</i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="disabled"><a href="#!"><i class="material-icons">chevron_left</i></a></li>
+                        {% endif %}
+                        
+                        {% for page_num in notifications.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                            {% if page_num %}
+                                {% if page_num == notifications.page %}
+                                <li class="active cyan darken-2"><a href="#!">{{ page_num }}</a></li>
+                                {% else %}
+                                <li class="waves-effect">
+                                    <a href="{{ url_for('notifications.index', page=page_num, **request.args) }}" class="white-text">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="disabled"><a href="#!">...</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if notifications.has_next %}
+                        <li class="waves-effect">
+                            <a href="{{ url_for('notifications.index', page=notifications.next_num, **request.args) }}">
+                                <i class="material-icons">chevron_right</i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="disabled"><a href="#!"><i class="material-icons">chevron_right</i></a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div class="glass-card" style="padding: 40px; text-align: center;">
+                    <i class="material-icons large grey-text text-lighten-1" style="font-size: 64px;">notifications_off</i>
+                    <h5 class="white-text">No Notifications</h5>
+                    <p class="grey-text text-lighten-2">You're all caught up!</p>
+                    <a href="{{ url_for('notifications.create_custom') }}" class="btn waves-effect waves-light cyan darken-2">
+                        <i class="material-icons left">add</i> Create Custom Notification
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize modals
+        var modals = document.querySelectorAll('.modal');
+        M.Modal.init(modals);
+        
+        // Initialize date pickers
+        var datepickers = document.querySelectorAll('.datepicker');
+        M.Datepicker.init(datepickers, {
+            format: 'yyyy-mm-dd',
+            autoClose: true
+        });
+        
+        // Select all functionality
+        const selectAll = document.getElementById('select-all');
+        const checkboxes = document.querySelectorAll('.notification-checkbox');
+        
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        });
+    });
+    
+    function submitBulkDelete() {
+        if (confirm('Delete selected notifications?')) {
+            const form = document.getElementById('bulk-form');
+            form.action = "{{ url_for('notifications.bulk_delete') }}";
+            form.submit();
+        }
+    }
+</script>
+{% endblock %}

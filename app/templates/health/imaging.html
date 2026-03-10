@@ -1,0 +1,516 @@
+<!-- app/health/templates/health/imaging_studies.html -->
+{% extends "layout.html" %}
+
+{% block title %}Imaging Studies - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col s12">
+            <h4 class="white-text"><i class="material-icons left cyan-text text-lighten-3">photo_camera</i>Imaging Studies</h4>
+            <p class="grey-text text-lighten-2">Manage your medical imaging records</p>
+        </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <h5 class="cyan-text text-lighten-3">Search Imaging Studies</h5>
+                    <form method="GET" action="{{ url_for('health.imaging_studies') }}">
+                        <div class="row">
+                            <div class="input-field col s12 m4">
+                                <select name="study_type" class="white-text">
+                                    <option value="">All Study Types</option>
+                                    <option value="xray" {% if request.args.get('study_type') == 'xray' %}selected{% endif %}>X-Ray</option>
+                                    <option value="ct" {% if request.args.get('study_type') == 'ct' %}selected{% endif %}>CT Scan</option>
+                                    <option value="mri" {% if request.args.get('study_type') == 'mri' %}selected{% endif %}>MRI</option>
+                                    <option value="ultrasound" {% if request.args.get('study_type') == 'ultrasound' %}selected{% endif %}>Ultrasound</option>
+                                </select>
+                                <label>Study Type</label>
+                            </div>
+                            <div class="input-field col s12 m3">
+                                <input type="text" name="body_part" class="white-text" 
+                                       value="{{ request.args.get('body_part', '') }}">
+                                <label for="body_part">Body Part</label>
+                            </div>
+                            <div class="input-field col s12 m3">
+                                <select name="date_range" class="white-text">
+                                    <option value="all" {% if request.args.get('date_range') == 'all' %}selected{% endif %}>All Time</option>
+                                    <option value="year" {% if request.args.get('date_range') == 'year' or not request.args.get('date_range') %}selected{% endif %}>Past Year</option>
+                                    <option value="6months" {% if request.args.get('date_range') == '6months' %}selected{% endif %}>6 Months</option>
+                                    <option value="3months" {% if request.args.get('date_range') == '3months' %}selected{% endif %}>3 Months</option>
+                                </select>
+                                <label>Date Range</label>
+                            </div>
+                            <div class="input-field col s12 m2">
+                                <select name="sort_by" class="white-text">
+                                    <option value="date_desc" {% if request.args.get('sort_by') == 'date_desc' or not request.args.get('sort_by') %}selected{% endif %}>Newest First</option>
+                                    <option value="date_asc" {% if request.args.get('sort_by') == 'date_asc' %}selected{% endif %}>Oldest First</option>
+                                    <option value="type" {% if request.args.get('sort_by') == 'type' %}selected{% endif %}>Study Type</option>
+                                </select>
+                                <label>Sort By</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="center-align">
+                                    <button type="submit" class="btn cyan darken-2 waves-effect waves-light">
+                                        <i class="material-icons left">search</i> Search
+                                    </button>
+                                    <a href="{{ url_for('health.imaging_studies') }}" class="btn grey waves-effect waves-light">
+                                        <i class="material-icons left">clear</i> Clear
+                                    </a>
+                                    <a href="#add-imaging-modal" class="btn green waves-effect waves-light modal-trigger">
+                                        <i class="material-icons left">add</i> Add Imaging
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Imaging Studies Grid -->
+    <div class="row">
+        {% if imaging_studies %}
+            {% for study in imaging_studies %}
+            <div class="col s12 m6 l4">
+                <div class="glass-card" style="height: 100%;">
+                    <div class="card-content white-text">
+                        <!-- Study Type Badge -->
+                        <div class="right">
+                            <span class="badge cyan lighten-2">
+                                {{ study.study_type|upper }}
+                            </span>
+                        </div>
+                        
+                        <!-- Study Details -->
+                        <h6>{{ study.body_part|title }}</h6>
+                        <p class="grey-text text-lighten-2" style="font-size: 0.9rem; margin: 5px 0;">
+                            <i class="material-icons tiny">date_range</i> 
+                            {{ study.study_date.strftime('%b %d, %Y') }}
+                        </p>
+                        
+                        <!-- Findings Preview -->
+                        {% if study.findings %}
+                        <div class="findings-preview" style="margin: 10px 0; max-height: 100px; overflow: hidden;">
+                            <p class="grey-text text-lighten-2" style="font-size: 0.9rem;">
+                                {{ study.findings|truncate(150) }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Status Indicators -->
+                        <div class="row" style="margin-bottom: 0;">
+                            <div class="col s6">
+                                {% if study.contrast_used %}
+                                <span class="badge blue">Contrast</span>
+                                {% endif %}
+                            </div>
+                            <div class="col s6 right-align">
+                                {% if study.follow_up_required %}
+                                <span class="badge orange">Follow-up</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="center-align" style="margin-top: 15px;">
+                            <button class="btn cyan waves-effect waves-light btn-small" data-study-id="{{ study.id }}">
+                                <i class="material-icons left">edit</i> Edit
+                            </button>
+                            <button class="btn red waves-effect waves-light btn-small" data-study-id="{{ study.id }}">
+                                <i class="material-icons left">delete</i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col s12">
+            <div class="glass-card center-align">
+                <div class="card-content white-text">
+                    <i class="material-icons large grey-text text-lighten-1">photo_camera</i>
+                    <h5 class="grey-text text-lighten-2">No Imaging Studies Found</h5>
+                    <p class="grey-text text-lighten-1">
+                        {% if request.args %}
+                            Try adjusting your search criteria
+                        {% else %}
+                            Add your first imaging study by clicking the "Add Imaging" button
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Imaging Modal -->
+<div id="add-imaging-modal" class="modal glass-card-modal modal-fixed-footer">
+    <div class="modal-content white-text">
+        <h4>Add Imaging Study</h4>
+        
+        <form id="imaging-form" method="POST" action="{{ url_for('health.imaging_studies') }}" enctype="multipart/form-data" id="imaging-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    {{ form.study_type(class="white-text", id="study_type") }}
+                    <label for="study_type">Study Type *</label>
+                </div>
+                <div class="input-field col s12 m6" id="other-type-field" style="display: none;">
+                    {{ form.other_type(class="white-text", id="other_type") }}
+                    <label for="other_type">Specify Type *</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.body_part(class="white-text", id="body_part") }}
+                    <label for="body_part">Body Part/Area *</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s12 m6">
+                    <label>
+                        {{ form.contrast_used(class="filled-in") }}
+                        <span class="white-text">Contrast Used</span>
+                    </label>
+                </div>
+                <div class="input-field col s12 m6">
+                    {{ form.radiation_dose(class="white-text", id="radiation_dose") }}
+                    <label for="radiation_dose">Radiation Dose</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    {{ form.study_date(class="white-text datepicker", id="study_date") }}
+                    <label for="study_date">Study Date *</label>
+                </div>
+                <div class="input-field col s12 m6">
+                    {{ form.report_date(class="white-text datepicker", id="report_date") }}
+                    <label for="report_date">Report Date</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    {{ form.radiologist(class="white-text", id="radiologist") }}
+                    <label for="radiologist">Radiologist</label>
+                </div>
+                <div class="input-field col s12 m6">
+                    {{ form.facility_name(class="white-text", id="facility_name") }}
+                    <label for="facility_name">Facility</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.findings(class="white-text materialize-textarea", id="findings") }}
+                    <label for="findings">Findings *</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.impression(class="white-text materialize-textarea", id="impression") }}
+                    <label for="impression">Impression/Conclusion</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.recommendations(class="white-text materialize-textarea", id="recommendations") }}
+                    <label for="recommendations">Recommendations</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s12 m6">
+                    <label>
+                        {{ form.follow_up_required(class="filled-in") }}
+                        <span class="white-text">Follow-up Required</span>
+                    </label>
+                </div>
+                <div class="input-field col s12 m6" id="follow-up-date-field" style="display: none;">
+                    {{ form.follow_up_date(class="white-text datepicker", id="follow_up_date") }}
+                    <label for="follow_up_date">Follow-up Date</label>
+                </div>
+            </div>
+            
+            <!-- File Uploads -->
+            <div class="row">
+                <div class="col s12 m6">
+                    <div class="file-field input-field">
+                        <div class="btn cyan darken-2">
+                            <span>Report File</span>
+                            {{ form.report_file() }}
+                        </div>
+                        <div class="file-path-wrapper">
+                            <input class="file-path white-text" type="text" placeholder="Upload report (PDF)">
+                        </div>
+                    </div>
+                </div>
+                <div class="col s12 m6">
+                    <div class="file-field input-field">
+                        <div class="btn cyan darken-2">
+                            <span>Images</span>
+                            {{ form.image_files(multiple="") }}
+                        </div>
+                        <div class="file-path-wrapper">
+                            <input class="file-path white-text" type="text" placeholder="Multiple images allowed">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.image_urls(class="white-text materialize-textarea", id="image_urls") }}
+                    <label for="image_urls">Image URLs (one per line)</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.notes(class="white-text materialize-textarea", id="notes") }}
+                    <label for="notes">Additional Notes</label>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+        <button type="submit" form="imaging-form" class="btn cyan darken-2 waves-effect waves-light">
+            <i class="material-icons left">save</i> Save Imaging Study
+        </button>
+    </div>
+</div>
+<!--View Imaging Details Modal-->
+<div id="view-imaging-modal" class="modal">
+    <div class="modal-content">
+        <h4>Imaging Details</h4>
+        <div id="imaging-details"></div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Close</button>
+    </div>
+</div>
+
+<style>
+    .findings-preview {
+        position: relative;
+    }
+    
+    .findings-preview:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 20px;
+        background: linear-gradient(to bottom, transparent, rgba(30, 30, 46, 0.8));
+    }
+    
+    .glass-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        
+        // Initialize datepickers
+        var datepickers = document.querySelectorAll('.datepicker');
+        M.Datepicker.init(datepickers, {
+            format: 'yyyy-mm-dd',
+            autoClose: true
+        });
+        // Add Image Modal
+        const addImageModal = M.Modal.init(document.getElementById('add-image-modal'));
+        
+        // Add Image Button
+        document.getElementById('add-image-btn').addEventListener('click', function() {
+            addImageModal.open();
+        });
+        
+        // Save Image
+        document.getElementById('imaging-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: form.method,
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    M.toast({ html: data.message, classes: 'green' });
+                    addImageModal.close();
+                    window.location.reload();
+                } else {
+                    M.toast({ html: data.message, classes: 'red' });
+                }
+            })
+            .catch(error => {
+                M.toast({ html: 'Error saving image', classes: 'red' });
+            });
+        });
+        // Delete Image
+        document.querySelectorAll('.delete-image-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const imageId = this.getAttribute('data-id');
+                
+                if (confirm('Are you sure you want to delete this image?')) {
+                    fetch(`/api/images/${imageId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            M.toast({html: data.message, classes: 'green rounded'});
+                            // Remove row from table
+                            document.querySelector(`tr[data-image-id="${imageId}"]`).remove();
+                        }
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error deleting image', classes: 'red rounded'});
+                    });
+                }
+            });
+        })
+        // View Imaging Details
+        const viewImageModal = M.Modal.init(document.getElementById('view-image-modal'));
+        
+        document.querySelectorAll('.view-image-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const imageId = this.getAttribute('data-id');
+                fetch(`/api/imaging/${imageId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const modalContent = document.getElementById('image-details');
+                        addImageDetails(data);
+                        viewImageModal.open();
+                    }
+                })
+                .catch(error => {
+                    M.toast({html: 'Error fetching image details', classes: 'red rounded'});
+                });
+            });
+        });
+        
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        
+        // Handle study type change
+        const studyTypeSelect = document.getElementById('study_type');
+        const otherTypeField = document.getElementById('other-type-field');
+        
+        studyTypeSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                otherTypeField.style.display = 'block';
+            } else {
+                otherTypeField.style.display = 'none';
+            }
+        });
+        
+        // Handle follow-up checkbox
+        const followUpCheckbox = document.querySelector('input[name="follow_up_required"]');
+        const followUpDateField = document.getElementById('follow-up-date-field');
+        
+        followUpCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                followUpDateField.style.display = 'block';
+            } else {
+                followUpDateField.style.display = 'none';
+            }
+        });
+        
+        // Trigger initial states
+        if (studyTypeSelect.value === 'other') {
+            otherTypeField.style.display = 'block';
+        }
+        if (followUpCheckbox.checked) {
+            followUpDateField.style.display = 'block';
+        }
+    });
+    function addImageDetails(data) {
+        
+        const modalContent = document.getElementById('image-details');
+        modalContent.innerHTML =`<!-- Imaging studies details-->
+        <div class="row">
+            <div class="col s12">
+                <h5 class="cyan-text text-lighten-3">Imaging Studies Details</h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col s12">
+                <div class="card-panel">
+                    <div class="row">
+                        <div class="col s6">
+                            <p><strong>Study Type:</strong> ${data.study_type}</p>
+                            <p><strong>Study Date:</strong> ${data.study_date}</p>
+                            <p><strong>Study Description:</strong> ${data.study_description}</p>
+                        </div>
+                        <div class="col s6">
+                            <p><strong>Follow-up Required:</strong> ${data.follow_up_required ? 'Yes' : 'No'}</p>
+                            <p><strong>Follow-up Date:</strong> ${data.follow_up_date}</p>
+                            <p><strong>Follow-up Description:</strong> ${data.follow_up_description}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col s12">
+                <div class="card-panel">
+                    <div class="row">
+                        <div class="col s6">
+                            <p><strong>Report Date:</strong> ${data.report_date}</p>
+                            <p><strong>Report File:</strong> ${data.report_file}</p>
+                        </div>
+                        <div class="col s6">
+                            <p><strong>Facility Name:</strong> ${data.facility_name}</p>
+                            <p><strong>Radiologist:</strong> ${data.radiologist}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col s12">
+                <div class="card-panel">
+                    <div class="row">
+                        <div class="col s6">
+                            <p><strong>Findings:</strong> ${data.findings}</p>
+                        </div>
+                        <div class="col s6">
+                            <p><strong>Additional Notes:</strong> ${data.notes}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>        
+        `;        
+        
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DoseAI{% endblock %}</title>
+
+    <!-- Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!--Materialize Fonts and Icons-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Fonts-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Julius+Sans+One&display=swap" rel="stylesheet">
+    <!-- Font Awesome for additional icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block background_layer %}
+        <!-- Fallback: Animated Glass Background -->
+        <div class="glass-bg-animation"></div>        
+    {% endblock %}
+
+    <!-- Sidenav (Glass Effect) -->      
+    <ul id="sidnav-left" class="sidenav glass-card-sidenav"> 
+        <li class="logo">            
+            <a href="{{ url_for('main.home') }}" class="brand-logo center-align">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="DoseAI Logo" class="sidenav-logo">
+                <span class="brand-name white-text">DoseAI</span>
+            </a>            
+        </li>
+        <li><div class="divider"></div></li>
+        
+        {% if session.get('user_id') %}
+        <!-- User Dashboard Links -->
+        <li class="sidenav-header">
+            <div class="user-view">
+                <div class="background">
+                    <i class="material-icons large cyan-text">account_circle</i>
+                </div>
+                <a href="#user"><span class="white-text name">{{ session.get('user_name', 'User') }}</span></a>
+                <a href="#email"><span class="white-text email">{{ session.get('user_email', '') }}</span></a>
+            </div>
+        </li>
+        
+        <li class="{% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+            <a href="{{ url_for('dashboard.index') }}" class="waves-effect">
+                <i class="material-icons cyan-text text-lighten-2">dashboard</i> Dashboard
+            </a>
+        </li>
+        <li class="{% if request.endpoint == 'medications.index' %}active{% endif %}">
+            <a href="{{ url_for('medications.index') }}" class="waves-effect">
+                <i class="material-icons blue-text">local_pharmacy</i> Medications
+            </a>
+        </li>
+        <li class="{% if request.endpoint == 'interactions.index' %}active{% endif %}">
+            <a href="{{ url_for('interactions.index') }}" class="waves-effect">
+                <i class="material-icons orange-text">warning</i> Interactions
+            </a>
+        </li>
+        <li class="{% if request.endpoint == 'insights.index' %}active{% endif %}">
+            <a href="{{ url_for('insights.index') }}" class="waves-effect">
+                <i class="material-icons green-text">analytics</i> Insights
+            </a>
+        </li>
+        <li class="{% if request.endpoint == 'health.index' %}active{% endif %}">    
+            <a href="{{ url_for('health.index') }}" class="waves-effect">
+                <i class="material-icons pink-text">favorite</i> Health
+            </a>
+        </li>
+        <li class="{% if request.endpoint == 'notifications.index' %}active{% endif %}">
+            <a href="{{ url_for('notifications.index') }}" class="waves-effect">
+                <i class="material-icons amber-text">notifications</i> Notifications
+                {% if unread_notifications and unread_notifications > 0 %}
+                <span class="new badge red" data-badge-caption="">{{ unread_notifications }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li><div class="divider"></div></li>
+        <li class="{% if request.endpoint == 'profile.index' %}active{% endif %}">
+            <a href="{{ url_for('profile.index') }}" class="waves-effect">
+                <i class="material-icons grey-text text-lighten-2">settings</i> Settings
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('auth.logout') }}" class="waves-effect red-text text-lighten-2">
+                <i class="material-icons red-text text-lighten-2">exit_to_app</i> Logout
+            </a>
+        </li>
+        {% else %}
+        <!-- Public Links for home page -->
+        <li class="{% if request.endpoint == 'main.home' %}active{% endif %}">
+            <a href="{{ url_for('main.home') }}" class="waves-effect">
+                <i class="material-icons cyan-text">home</i> Home
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.home') }}#features" class="waves-effect scroll-link">
+                <i class="material-icons blue-text">star</i> Features
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.home') }}#about" class="waves-effect scroll-link">
+                <i class="material-icons green-text">info</i> About
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.home') }}#how-it-works" class="waves-effect scroll-link">
+                <i class="material-icons purple-text">play_circle_filled</i> How It Works
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.home') }}#testimonials" class="waves-effect scroll-link">
+                <i class="material-icons amber-text">format_quote</i> Testimonials
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.home') }}#contact" class="waves-effect scroll-link">
+                <i class="material-icons pink-text">contact_mail</i> Contact
+            </a>
+        </li>
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="{{ url_for('auth.login') }}" class="waves-effect">
+                <i class="material-icons cyan-text">person</i> Login
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('auth.register') }}" class="waves-effect cyan-text">
+                <i class="material-icons cyan-text">person_add</i> Register
+            </a>
+        </li>
+        {% endif %}
+        
+        <!-- Common Links -->
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="{{ url_for('main.privacy') }}" class="waves-effect">
+                <i class="material-icons grey-text">privacy_tip</i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.terms') }}" class="waves-effect">
+                <i class="material-icons grey-text">description</i> Terms of Service
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.help') }}" class="waves-effect">
+                <i class="material-icons grey-text">help</i> Help & FAQ
+            </a>
+        </li>
+    </ul>
+
+    <!-- Top Navigation Bar -->
+    <nav class="glass-card-navbar z-depth-0">
+        <div class="nav-wrapper container">
+            <div class="nav-left-group">
+                <a href="#" data-target="sidnav-left" class="sidenav-trigger white-text show-on-large left tooltipped">
+                    <i class="material-icons">menu</i>
+                </a>
+                
+                {% if session.get('user_id') %}
+                <div id="global-countdown-container" class="nav-icon-container tooltipped" data-position="bottom" data-tooltip="Next Dose Countdown">
+                    <i class="material-icons left cyan-text text-lighten-2">schedule</i>
+                    <span id="global-countdown-timer">Next Dose: Loading...</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <a href="{{ url_for('main.home') }}" class="brand-logo logo-center hide-on-med-and-down">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="DoseAI Logo" class="logo-image">
+                <span class="brand-text white-text">DoseAI</span>
+            </a>
+            
+            <!-- Desktop Navigation -->
+            <ul class="right hide-on-med-and-down nav-right-icons">                    
+                {% if session.get('user_id') %}
+                <!-- User Menu -->
+                <li>
+                    <a href="#daily-checkin-modal" id="daily-checkin-trigger" class="modal-trigger nav-icon-link tooltipped" data-position="bottom" data-tooltip="Daily Vitals Check-in">
+                        <i class="material-icons pink-text text-lighten-2">favorite_border</i>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="{{ url_for('notifications.index') }}" id="notification-trigger" class="nav-icon-link tooltipped" data-position="bottom" data-tooltip="Notifications">
+                        <i class="material-icons amber-text">notifications</i>
+                        {% if unread_notifications and unread_notifications > 0 %}
+                        <span class="notification-badge" id="notification-badge">{{ unread_notifications }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="{{ url_for('profile.index') }}" class="tooltipped" data-position="bottom" data-tooltip="Profile">
+                        <i class="material-icons cyan-text">person</i>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}" class="tooltipped" data-position="bottom" data-tooltip="Logout">
+                        <i class="material-icons red-text text-lighten-2">exit_to_app</i>
+                    </a>
+                </li>
+                {% else %}
+                <!-- Public Menu -->
+                <li>
+                    <a href="{{ url_for('main.home') }}#features" class="white-text scroll-link">Features</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('main.home') }}#how-it-works" class="white-text scroll-link">How It Works</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.login') }}" class="btn-small waves-effect waves-light cyan darken-2">Login</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.register') }}" class="btn-small waves-effect waves-light white cyan-text text-darken-2">Register</a>
+                </li>
+                {% endif %}
+            </ul>
+            
+            <!-- Mobile Navigation -->
+            <ul class="right hide-on-large-only">
+                {% if session.get('user_id') %}
+                <li>
+                    <a href="{{ url_for('notifications.index') }}" id="notification-trigger-mobile">
+                        <i class="material-icons amber-text">notifications</i>
+                        {% if unread_notifications and unread_notifications > 0 %}
+                        <span class="notification-badge">{{ unread_notifications }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('profile.index') }}">
+                        <i class="material-icons cyan-text">person</i>
+                    </a>
+                </li>
+                {% else %}
+                <li>
+                    <a href="{{ url_for('auth.login') }}">
+                        <i class="material-icons cyan-text">login</i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Page Content -->
+    <main>
+        <!-- Flash Message Container -->
+        <div id="flash-message-container" class="glass-card">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="card-panel center-align {{ category }} lighten-2 z-depth-1 flash-message glass-card">
+                            <span class="{%if category == 'error'%}red-text{%else%}green-text{%endif%}"><strong>{{ message }}</strong></span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="glass-card-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col s12 m4">
+                    <h5 class="white-text">DoseAI</h5>
+                    <p class="grey-text text-lighten-4">Your personal medication assistant for safer, smarter healthcare management.</p>
+                    <div class="social-icons">
+                        <a href="#" class="social-icon"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="col s12 m4">
+                    <h5 class="white-text">Quick Links</h5>
+                    <ul>
+                        <li><a href="{{ url_for('main.home') }}" class="grey-text text-lighten-3">Home</a></li>
+                        <li><a href="{{ url_for('main.home') }}#features" class="grey-text text-lighten-3 scroll-link">Features</a></li>
+                        <li><a href="{{ url_for('main.home') }}#about" class="grey-text text-lighten-3 scroll-link">About</a></li>
+                        <li><a href="{{ url_for('main.privacy') }}" class="grey-text text-lighten-3">Privacy Policy</a></li>
+                        <li><a href="{{ url_for('main.terms') }}" class="grey-text text-lighten-3">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="col s12 m4">
+                    <h5 class="white-text">Contact Us</h5>
+                    <ul>
+                        <li><i class="material-icons tiny cyan-text">email</i> <span class="grey-text text-lighten-3">support@doseai.com</span></li>
+                        <li><i class="material-icons tiny cyan-text">phone</i> <span class="grey-text text-lighten-3">+1 (555) 123-4567</span></li>
+                        <li><i class="material-icons tiny cyan-text">location_on</i> <span class="grey-text text-lighten-3">123 Health Blvd, Wellness City</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-copyright">
+                <div class="container center-align">
+                    &copy; {{ now.year if now else '2024' }} DoseAI. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal Structures -->
+    {% if session.get('user_id') %}
+    <!-- Dose Alert Modal -->
+    <div id="dose-alert-modal" class="modal glass-card">
+        <div class="modal-content center-align">
+            <i class="material-icons large red-text">alarm</i>
+            <h4 class="center-align white-text text-darken-2">Time for Medication!</h4>
+            <p class="center-align" id="dose-alert-message" style="font-size: 1.2em;"></p>
+            <div id="missed-dose-guidance" style="font-size: 1em; margin-top: 10px;"></div>
+                    
+            <div class="modal-footer">
+                <button id="snooze-button" class="modal-close waves-effect waves-purple btn deep-purple lighten-2 white-text">Snooze (10 min)</button>
+                <button id="take-dose-button" class="modal-close waves-effect waves-green btn cyan darken-2 white-text">Take Dose</button>
+                <button id="skip-dose-button" class="modal-close waves-effect waves-red btn red lighten-1 white-text">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Center -->
+    <div id="notification-center" class="glass-card-notification z-depth-3">
+        <div class="notification-header">
+            <h5>Notifications</h5>
+            <a href="#!" id="close-notification" class="white-text"><i class="material-icons">close</i></a>
+        </div>
+        <div class="notification-content" id="notification-content">
+            <p class="grey-text center-align">Loading notifications...</p>
+        </div>
+    </div>
+
+    <!-- Daily Check-in Modal -->
+    <div id="daily-checkin-modal" class="modal glass-card-modal">
+        <div class="modal-content white-text">
+            <h4 class="center-align">Daily Health Check-in</h4>
+            <p class="center-align grey-text text-lighten-2">Record your symptoms and vitals for today.</p>
+            <div class="divider white-text" style="margin: 15px 0;"></div>
+            
+            <form id="daily-checkin-form">
+                <p>Vitals:</p>
+                <div class="row" id="vitals-fields"></div>
+                
+                <p>Symptoms:</p>    
+                <div class="row" id="symptom-fields"></div>
+                
+                <button class="btn-flat white-text" type="button" id="add-symptom-btn">
+                    <i class="material-icons left green-text">add_circle</i> Add Symptom
+                </button>
+                
+                <div class="center-align" style="margin-top: 20px;">
+                    <button class="btn waves-effect waves-light green darken-2" type="submit" id="checkin-submit-btn">
+                        Submit Check-in <i class="material-icons right">send</i>
+                    </button>
+                    <a href="#!" class="modal-close btn-flat white-text" style="margin-left: 10px;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.7/purify.min.js"></script>
+    
+    <!-- Inject server-side data -->
+<script id="server-data" type="application/json">
+    {{ {
+        "global_countdown": global_countdown,
+        "missed_dose_guidance": missed_dose_guidance, 
+        "daily_data_vitals": daily_data_vitals,
+        "unread_notifications": unread_notifications,
+        "api_endpoints": api_endpoints,
+        "user_authenticated": session.get('user_id') is not none,
+        "user_name": session.get('user_name', ''),
+        "user_email": session.get('user_email', ''),
+        "config": config
+    } | tojson | safe }}        
+</script>
+
+<script>
+    // Parse server data for use in JS safely
+    (function() {
+        try {
+            const raw = document.getElementById('server-data').textContent || '{}';
+            const serverData = JSON.parse(raw);
+            
+            // Expose all server data to window object
+            window.serverData = serverData;
+            
+            // Backward compatibility with existing code
+            window.global_countdown = serverData.global_countdown || null;
+            window.missed_dose_guidance = serverData.missed_dose_guidance || null;
+            window.daily_data_vitals = serverData.daily_data_vitals || null;
+            window.apiEndpoints = serverData.api_endpoints || {};
+            window.unread_notifications = serverData.unread_notifications || 0;
+            window.user_authenticated = serverData.user_authenticated || false;
+            
+        } catch (e) {
+            console.error('Error parsing server data:', e);
+            // Set safe defaults
+            window.serverData = {};
+            window.global_countdown = null;
+            window.missed_dose_guidance = null;
+            window.apiEndpoints = {};
+            window.unread_notifications = 0;
+            window.user_authenticated = false;
+        }
+    })();
+    </script>
+    
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/script.js', v=config['STATIC_FILE_VERSION']) }}"></script>
+    
+    <!-- Initialize Materialize components -->     
+    <script>      
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize AOS (Animate On Scroll)
+            AOS.init({
+                duration: 800,
+                once: true,
+                offset: 100
+            });
+            
+            // Modal initialization
+            var modalElems = document.querySelectorAll('.modal');
+            var modalInstances = M.Modal.init(modalElems, {
+                dismissible: true,
+                startingTop: '10%',
+                endingTop: '10%'
+            });
+            
+            // Assign the first modal instance to the global variable
+            window.doseModalInstance = modalInstances[0];
+
+            // Sidenav initialization
+            var sidenavElems = document.querySelectorAll('.sidenav');
+            M.Sidenav.init(sidenavElems, { edge: 'left' });
+            
+            // Tooltip Initialization
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems); 
+            
+            // Form Select Initialization
+            var selectElems = document.querySelectorAll('select');
+            M.FormSelect.init(selectElems);
+            
+            // Initialize scrollspy for smooth navigation
+            var scrollSpyElems = document.querySelectorAll('.scrollspy');
+            M.ScrollSpy.init(scrollSpyElems, {
+                throttle: 100,
+                scrollOffset: 80
+            });
+            
+            // Parallax initialization if any
+            var parallaxElems = document.querySelectorAll('.parallax');
+            M.Parallax.init(parallaxElems);
+            
+            // Initialize carousel if present
+            var carouselElems = document.querySelectorAll('.carousel');
+            if (carouselElems.length > 0) {
+                M.Carousel.init(carouselElems, {
+                    fullWidth: true,
+                    indicators: true,
+                    duration: 200
+                });
+            }
+            
+            // Scroll to top button
+            var scrollTopBtn = document.getElementById('scroll-top-btn');
+            if (scrollTopBtn) {
+                window.addEventListener('scroll', function() {
+                    if (window.pageYOffset > 300) {
+                        scrollTopBtn.classList.add('show');
+                    } else {
+                        scrollTopBtn.classList.remove('show');
+                    }
+                });
+                
+                scrollTopBtn.addEventListener('click', function() {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a.scroll-link').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId.startsWith('#')) {
+                        const targetElement = document.querySelector(targetId);
+                        if (targetElement) {
+                            window.scrollTo({
+                                top: targetElement.offsetTop - 80,
+                                behavior: 'smooth'
+                            });
+                            
+                            // Close sidenav on mobile
+                            const sidenavInstance = M.Sidenav.getInstance(document.getElementById('sidnav-left'));
+                            if (sidenavInstance && sidenavInstance.isOpen) {
+                                sidenavInstance.close();
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

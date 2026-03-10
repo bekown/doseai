@@ -1,0 +1,830 @@
+<!-- templates/insights/index.html -->
+{% extends "insights/base_insights.html" %}
+
+{% block insights_content %}
+<!-- Header Section -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card insights-header">
+            <div class="row valign-wrapper">
+                <div class="col s8">
+                    <h4 class="white-text" style="margin: 0;">
+                        <i class="material-icons left">insights</i>Health Insights Dashboard
+                    </h4>
+                    <p class="grey-text text-lighten-2" style="margin-top: 5px;">
+                        Personalized analytics and health intelligence
+                    </p>
+                </div>
+                <div class="col s4 right-align">
+                    <div class="chip glass-card">
+                        <i class="material-icons left">update</i>
+                        Updated {{ helper.get_relative_time(datetime.utcnow()) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Row -->
+<div class="row">
+    <!-- Adherence Rate Card -->
+    <div class="col s12 m6 l3">
+        <div class="glass-card center-align metric-card" style="border-top: 4px solid #4CAF50;">
+            <div class="metric-icon">
+                <i class="material-icons large">check_circle</i>
+            </div>
+            <h3 class="white-text" style="margin: 10px 0;">
+                {{ "%.1f"|format(adherence_rate) }}%
+            </h3>
+            <p class="cyan-text text-lighten-2">Adherence Rate</p>
+            <div class="progress glass-progress">
+                <div class="determinate" style="width: {{ adherence_rate }}%"></div>
+            </div>
+            <p class="grey-text text-lighten-2 small-text">Last 30 days</p>
+        </div>
+    </div>
+
+    <!-- Wellness Score Card -->
+    <div class="col s12 m6 l3">
+        <div class="glass-card center-align metric-card" style="border-top: 4px solid #2196F3;">
+            <div class="metric-icon">
+                <i class="material-icons large">score</i>
+            </div>
+            <h3 class="white-text" style="margin: 10px 0;">
+                {{ wellness_score.total_score if wellness_score else 'N/A' }}
+            </h3>
+            <p class="cyan-text text-lighten-2">Wellness Score</p>
+            <div class="progress glass-progress">
+                <div class="determinate" style="width: {{ wellness_score.total_score if wellness_score else 0 }}%"></div>
+            </div>
+            <p class="grey-text text-lighten-2 small-text">Overall health</p>
+        </div>
+    </div>
+
+    <!-- Active Medications Card -->
+    <div class="col s12 m6 l3">
+        <div class="glass-card center-align metric-card" style="border-top: 4px solid #FF9800;">
+            <div class="metric-icon">
+                <i class="material-icons large">medication</i>
+            </div>
+            <h3 class="white-text" style="margin: 10px 0;">
+                {{ medication_performance|length }}
+            </h3>
+            <p class="cyan-text text-lighten-2">Active Medications</p>
+            <div class="chip glass-card">
+                {% set low_adherence = medication_performance|selectattr('adherence_rate', '<', 70)|list %}
+                {% if low_adherence|length > 0 %}
+                <span class="red-text">{{ low_adherence|length }} need attention</span>
+                {% else %}
+                <span class="green-text">All on track</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Factors Card -->
+    <div class="col s12 m6 l3">
+        <div class="glass-card center-align metric-card" style="border-top: 4px solid #F44336;">
+            <div class="metric-icon">
+                <i class="material-icons large">warning</i>
+            </div>
+            <h3 class="white-text" style="margin: 10px 0;">
+                {{ risk_factors|length }}
+            </h3>
+            <p class="cyan-text text-lighten-2">Risk Factors</p>
+            {% if risk_factors|length > 0 %}
+            <div class="chip red darken-2 white-text pulse">
+                {{ risk_factors|length }} alerts
+            </div>
+            {% else %}
+            <div class="chip green darken-2 white-text">
+                No active risks
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Action Items & AI Insights Row -->
+<div class="row">
+    <!-- Action Items -->
+    <div class="col s12 l6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">playlist_add_check</i>Action Items
+                </h5>
+                <span class="badge blue lighten-1">{{ action_items|length }} actions</span>
+            </div>
+            <div class="card-content">
+                {% if action_items %}
+                <ul class="collection glass-collection">
+                    {% for item in action_items %}
+                    <li class="collection-item glass-collection-item">
+                        <div class="row valign-wrapper" style="margin-bottom: 0;">
+                            <div class="col s2 center-align">
+                                <span class="action-icon" style="font-size: 2em;">{{ item.icon }}</span>
+                            </div>
+                            <div class="col s8">
+                                <h6 class="white-text">{{ item.title }}</h6>
+                                <p class="grey-text text-lighten-2 small-text">{{ item.description }}</p>
+                            </div>
+                            <div class="col s2 right-align">
+                                <span class="new badge {{ 'red' if item.priority == 'high' else 'orange' if item.priority == 'medium' else 'blue' }}" 
+                                      data-badge-caption="{{ item.priority }}">
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 10px;">
+                            <div class="col s12 right-align">
+                                <a href="{{ item.url }}" class="btn-small waves-effect waves-light {{ 'red' if item.priority == 'high' else 'orange' if item.priority == 'medium' else 'blue' }}">
+                                    Take Action
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="center-align" style="padding: 40px 0;">
+                    <i class="material-icons large green-text text-lighten-2">check_circle</i>
+                    <p class="white-text">No action items needed!</p>
+                    <p class="grey-text text-lighten-2">Keep up the great work!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Insights -->
+    <div class="col s12 l6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">psychology</i>AI Insights
+                </h5>
+                <span class="badge purple lighten-1">Powered by AI</span>
+            </div>
+            <div class="card-content">
+                {% if ai_insights %}
+                <div class="carousel carousel-slider ai-insights-carousel">
+                    {% for insight in ai_insights %}
+                    <div class="carousel-item">
+                        <div class="ai-insight-card">
+                            <div class="insight-header">
+                                <span class="insight-type {{ 'blue' if insight.insight_type == 'adherence' else 'green' if insight.insight_type == 'symptom' else 'purple' }}">
+                                    {{ insight.insight_type|title }}
+                                </span>
+                                <span class="confidence-badge">
+                                    {{ "%.0f"|format(insight.confidence_score) }}% confident
+                                </span>
+                            </div>
+                            <div class="insight-content">
+                                <p class="white-text">{{ insight.insight_text }}</p>
+                            </div>
+                            {% if insight.is_actionable %}
+                            <div class="insight-actions">
+                                <a href="{{ insight.action_url }}" class="btn-small waves-effect waves-light purple lighten-2">
+                                    {{ insight.action_label or 'Take Action' }}
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="center-align" style="padding: 40px 0;">
+                    <i class="material-icons large purple-text text-lighten-2">auto_awesome</i>
+                    <p class="white-text">Generating insights...</p>
+                    <p class="grey-text text-lighten-2">AI is analyzing your health data</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Medication Performance & Adherence Trends -->
+<div class="row">
+    <!-- Medication Performance -->
+    <div class="col s12 l7">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">bar_chart</i>Medication Performance
+                </h5>
+                <div class="header-actions">
+                    <a class="dropdown-trigger btn-flat white-text" href="#" data-target='medication-filter'>
+                        <i class="material-icons">filter_list</i>
+                    </a>
+                </div>
+            </div>
+            <div class="card-content">
+                <table class="highlight glass-table">
+                    <thead>
+                        <tr>
+                            <th class="white-text">Medication</th>
+                            <th class="white-text center-align">Adherence</th>
+                            <th class="white-text center-align">Doses</th>
+                            <th class="white-text center-align">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for med in medication_performance[:5] %}
+                        <tr>
+                            <td class="white-text">{{ med.name }}</td>
+                            <td class="center-align">
+                                <div class="progress small-progress glass-progress">
+                                    <div class="determinate {{ 'green' if med.adherence_rate >= 90 else 'yellow' if med.adherence_rate >= 70 else 'red' }}" 
+                                         style="width: {{ med.adherence_rate }}%">
+                                    </div>
+                                </div>
+                                <span class="{{ 'green-text' if med.adherence_rate >= 90 else 'yellow-text' if med.adherence_rate >= 70 else 'red-text' }}">
+                                    {{ "%.1f"|format(med.adherence_rate) }}%
+                                </span>
+                            </td>
+                            <td class="center-align white-text">
+                                {{ med.taken_doses }}/{{ med.total_doses }}
+                            </td>
+                            <td class="center-align">
+                                {% if med.adherence_rate >= 90 %}
+                                <span class="badge green darken-2 white-text">Excellent</span>
+                                {% elif med.adherence_rate >= 70 %}
+                                <span class="badge orange darken-2 white-text">Good</span>
+                                {% else %}
+                                <span class="badge red darken-2 white-text">Needs Attention</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if medication_performance|length > 5 %}
+                <div class="center-align" style="margin-top: 15px;">
+                    <a href="{{ url_for('insights.medication_analytics') }}" class="btn-flat cyan-text">
+                        View All {{ medication_performance|length }} Medications
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Adherence Trends -->
+    <div class="col s12 l5">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">trending_up</i>Adherence Trends
+                </h5>
+            </div>
+            <div class="card-content">
+                <div id="adherence-trend-chart">
+                    <!-- Chart will be rendered here with JavaScript -->
+                    <div class="chart-placeholder">
+                        {% if adherence_trends %}
+                        <div class="trend-indicator">
+                            {% set latest_trend = adherence_trends[0] if adherence_trends else None %}
+                            {% set previous_trend = adherence_trends[1] if adherence_trends|length > 1 else None %}
+                            
+                            {% if latest_trend and previous_trend %}
+                                {% set trend_diff = latest_trend.adherence_rate - previous_trend.adherence_rate %}
+                                {% if trend_diff > 0 %}
+                                <div class="trend-up">
+                                    <i class="material-icons green-text">arrow_upward</i>
+                                    <span class="green-text">+{{ "%.1f"|format(trend_diff) }}%</span>
+                                </div>
+                                {% elif trend_diff < 0 %}
+                                <div class="trend-down">
+                                    <i class="material-icons red-text">arrow_downward</i>
+                                    <span class="red-text">{{ "%.1f"|format(trend_diff) }}%</span>
+                                </div>
+                                {% else %}
+                                <div class="trend-neutral">
+                                    <i class="material-icons yellow-text">remove</i>
+                                    <span class="yellow-text">No change</span>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="simple-trend-chart">
+                            {% for trend in adherence_trends[:4] %}
+                            <div class="trend-bar-container">
+                                <div class="trend-bar-label white-text">
+                                    {{ trend.period_type|title }}
+                                </div>
+                                <div class="trend-bar-bg">
+                                    <div class="trend-bar-fill" style="width: {{ trend.adherence_rate }}%; 
+                                         background: linear-gradient(to top, {% if trend.adherence_rate >= 90 %}#4CAF50{% elif trend.adherence_rate >= 70 %}#FF9800{% else %}#F44336{% endif %}, 
+                                         {% if trend.adherence_rate >= 90 %}#81C784{% elif trend.adherence_rate >= 70 %}#FFB74D{% else %}#E57373{% endif %});">
+                                    </div>
+                                </div>
+                                <div class="trend-bar-value white-text">
+                                    {{ "%.1f"|format(trend.adherence_rate) }}%
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="center-align" style="padding: 40px 0;">
+                            <i class="material-icons large grey-text">show_chart</i>
+                            <p class="white-text">No trend data available</p>
+                            <p class="grey-text text-lighten-2">Check back in a few days</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Symptom Trends & AI Report -->
+<div class="row">
+    <!-- Symptom Trends -->
+    <div class="col s12 l6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">healing</i>Symptom Trends
+                </h5>
+                <span class="badge deep-orange lighten-1">Last 7 days</span>
+            </div>
+            <div class="card-content">
+                {% if symptoms_by_day %}
+                <div class="symptom-trend-chart">
+                    <div class="trend-summary">
+                        <div class="trend-item">
+                            <span class="white-text">Daily Average:</span>
+                            <span class="right white-text">
+                                {{ (symptoms_by_day|sum(attribute='count') / symptoms_by_day|length)|round(1) if symptoms_by_day|length > 0 else 0 }}
+                            </span>
+                        </div>
+                        <div class="trend-item">
+                            <span class="white-text">Severity Trend:</span>
+                            <span class="right {{ 'green-text' if symptom_trend == 'improving' else 'red-text' if symptom_trend == 'worsening' else 'yellow-text' }}">
+                                {{ symptom_trend|title }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="symptoms-timeline">
+                        {% for day in symptoms_by_day %}
+                        <div class="timeline-day">
+                            <div class="day-label white-text">
+                                {{ day.date.strftime('%a') if day.date else '' }}
+                            </div>
+                            <div class="day-symptoms">
+                                {% if day.count > 0 %}
+                                <div class="symptom-dots">
+                                    {% for i in range(day.count) %}
+                                    <div class="symptom-dot {{ 'severe' if day.avg_severity >= 2.5 else 'moderate' if day.avg_severity >= 1.5 else 'mild' }}"></div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="no-symptoms">
+                                    <i class="material-icons tiny green-text">check</i>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="center-align" style="padding: 40px 0;">
+                    <i class="material-icons large green-text">mood</i>
+                    <p class="white-text">No symptoms recorded</p>
+                    <p class="grey-text text-lighten-2">That's great news!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Health Report -->
+    <div class="col s12 l6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">description</i>Health Report Summary
+                </h5>
+                <span class="badge indigo lighten-1">AI Generated</span>
+            </div>
+            <div class="card-content">
+                <div class="ai-report">
+                    <div class="report-header">
+                        <div class="report-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Overall Health</span>
+                                <div class="metric-value">
+                                    <span class="white-text">{{ wellness_score.total_score if wellness_score else 'N/A' }}</span>
+                                    <span class="metric-unit">/100</span>
+                                </div>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Risk Level</span>
+                                <div class="metric-value">
+                                    <span class="badge {{ 'green' if risk_factors|length == 0 else 'orange' if risk_factors|length <= 2 else 'red' }}">
+                                        {{ 'Low' if risk_factors|length == 0 else 'Medium' if risk_factors|length <= 2 else 'High' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="report-insights">
+                        {% if ai_report and ai_report.insights %}
+                            {% for insight in ai_report.insights[:3] %}
+                            <div class="insight-item">
+                                <div class="insight-icon">
+                                    <i class="material-icons {{ 'green-text' if insight.priority == 'low' else 'orange-text' if insight.priority == 'medium' else 'red-text' }}">
+                                        {% if insight.category == 'adherence' %}check_circle
+                                        {% elif insight.category == 'symptoms' %}healing
+                                        {% elif insight.category == 'medication' %}medication
+                                        {% else %}lightbulb{% endif %}
+                                    </i>
+                                </div>
+                                <div class="insight-text">
+                                    <h6 class="white-text">{{ insight.title }}</h6>
+                                    <p class="grey-text text-lighten-2 small-text">{{ insight.description }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="center-align" style="padding: 20px 0;">
+                            <i class="material-icons large indigo-text">auto_awesome</i>
+                            <p class="white-text">Generating report...</p>
+                            <p class="grey-text text-lighten-2">AI analysis in progress</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="report-actions">
+                        <a href="{{ url_for('insights.export_data') }}" class="btn waves-effect waves-light indigo lighten-2">
+                            <i class="material-icons left">download</i>Export Full Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Dropdown for Filter -->
+<ul id='medication-filter' class='dropdown-content'>
+    <li><a href="#!" class="white-text">All Medications</a></li>
+    <li><a href="#!" class="white-text">Active Only</a></li>
+    <li><a href="#!" class="white-text">Needs Attention</a></li>
+</ul>
+
+<style>
+.insights-header {
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, rgba(3, 169, 244, 0.2), rgba(156, 39, 176, 0.2));
+}
+
+.metric-card {
+    padding: 20px;
+    border-radius: 15px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.metric-icon {
+    margin-bottom: 15px;
+}
+
+.glass-progress {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    height: 8px;
+    margin: 10px 0;
+}
+
+.glass-progress .determinate {
+    border-radius: 10px;
+}
+
+.small-progress {
+    height: 4px;
+    margin: 5px 0;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-collection {
+    background: transparent;
+    border: none;
+}
+
+.glass-collection-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.glass-collection-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.action-icon {
+    display: block;
+}
+
+.ai-insights-carousel {
+    height: 300px;
+}
+
+.ai-insight-card {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    height: 260px;
+    display: flex;
+    flex-direction: column;
+}
+
+.insight-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.insight-type {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    color: white;
+}
+
+.insight-content {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.insight-actions {
+    margin-top: 15px;
+}
+
+.glass-table {
+    background: transparent;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.glass-table tbody tr {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.glass-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.trend-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.trend-up, .trend-down, .trend-neutral {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2em;
+}
+
+.simple-trend-chart {
+    margin-top: 20px;
+}
+
+.trend-bar-container {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+    gap: 15px;
+}
+
+.trend-bar-label {
+    width: 80px;
+    text-align: right;
+}
+
+.trend-bar-bg {
+    flex-grow: 1;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.trend-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1s ease;
+}
+
+.trend-bar-value {
+    width: 60px;
+    text-align: left;
+}
+
+.symptom-trend-chart {
+    padding: 10px;
+}
+
+.trend-summary {
+    margin-bottom: 20px;
+}
+
+.trend-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.symptoms-timeline {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.timeline-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.day-symptoms {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px;
+    width: 60px;
+}
+
+.symptom-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.symptom-dot.mild {
+    background: #4CAF50;
+}
+
+.symptom-dot.moderate {
+    background: #FF9800;
+}
+
+.symptom-dot.severe {
+    background: #F44336;
+}
+
+.no-symptoms {
+    padding: 5px;
+}
+
+.ai-report {
+    padding: 10px;
+}
+
+.report-metrics {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.metric {
+    text-align: center;
+}
+
+.metric-label {
+    display: block;
+    color: #B0BEC5;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.metric-value {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 5px;
+}
+
+.metric-unit {
+    color: #B0BEC5;
+    font-size: 14px;
+}
+
+.insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin: 15px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.insight-icon i {
+    font-size: 24px;
+}
+
+.insight-text h6 {
+    margin-top: 0;
+}
+
+.report-actions {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.small-text {
+    font-size: 12px;
+}
+
+.chart-placeholder {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .metric-card {
+        margin-bottom: 20px;
+    }
+    
+    .symptoms-timeline {
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .timeline-day {
+        flex: 0 0 calc(33.333% - 15px);
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize carousel
+    var carouselElems = document.querySelectorAll('.carousel');
+    M.Carousel.init(carouselElems, {
+        fullWidth: true,
+        indicators: true,
+        duration: 200
+    });
+    
+    // Auto-advance carousel
+    setInterval(function() {
+        var carousel = M.Carousel.getInstance(document.querySelector('.carousel'));
+        if (carousel) carousel.next();
+    }, 5000);
+    
+    // Initialize dropdown
+    var dropdownElems = document.querySelectorAll('.dropdown-trigger');
+    M.Dropdown.init(dropdownElems, {
+        constrainWidth: false
+    });
+    
+    // Add hover effects to cards
+    var cards = document.querySelectorAll('.metric-card');
+    cards.forEach(function(card) {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

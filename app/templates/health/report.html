@@ -1,0 +1,308 @@
+<!-- app/health/templates/health/report.html -->
+{% extends "layout.html" %}
+
+{% block title %}Health Report - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <div class="row">
+                        <div class="col s12 center-align">
+                            <h4 class="cyan-text text-lighten-3">Comprehensive Health Report</h4>
+                            <p class="grey-text text-lighten-2">Generated on {{ now().strftime('%B %d, %Y') }}</p>
+                            <div class="divider" style="margin: 20px 0;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Information -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3">Patient Information</h5>
+                            <div class="row">
+                                <div class="col s6">
+                                    <p class="grey-text text-lighten-2">Name:</p>
+                                    <p class="white-text">
+                                        {% if current_user.profile.first_name %}
+                                            {{ current_user.profile.first_name }} {{ current_user.profile.last_name }}
+                                        {% else %}
+                                            {{ current_user.username }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col s6">
+                                    <p class="grey-text text-lighten-2">Date of Birth:</p>
+                                    <p class="white-text">
+                                        {% if current_user.profile.date_of_birth %}
+                                            {{ current_user.profile.date_of_birth.strftime('%B %d, %Y') }}
+                                            (Age: {{ current_user.profile.age }})
+                                        {% else %}
+                                            Not specified
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Conditions -->
+                    {% if conditions %}
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">Active Health Conditions</h5>
+                            <table class="highlight responsive-table">
+                                <thead>
+                                    <tr>
+                                        <th>Condition</th>
+                                        <th>Type</th>
+                                        <th>Diagnosis Date</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for condition in conditions %}
+                                    <tr>
+                                        <td>{{ condition.name }}</td>
+                                        <td>{{ condition.type|title }}</td>
+                                        <td>{{ condition.diagnosis_date.strftime('%Y-%m-%d') if condition.diagnosis_date else 'N/A' }}</td>
+                                        <td>{{ condition.severity|title if condition.severity else 'N/A' }}</td>
+                                        <td>{{ condition.status|title }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Active Allergies -->
+                    {% if allergies %}
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">Active Allergies</h5>
+                            <table class="highlight responsive-table">
+                                <thead>
+                                    <tr>
+                                        <th>Allergen</th>
+                                        <th>Type</th>
+                                        <th>Reaction</th>
+                                        <th>Severity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for allergy in allergies %}
+                                    <tr>
+                                        <td>{{ allergy.allergen_name }}</td>
+                                        <td>{{ allergy.type|title }}</td>
+                                        <td>{{ allergy.reaction }}</td>
+                                        <td>{{ allergy.severity|title }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Current Medications -->
+                    {% if medications %}
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">Current Medications</h5>
+                            <table class="highlight responsive-table">
+                                <thead>
+                                    <tr>
+                                        <th>Medication</th>
+                                        <th>Dosage</th>
+                                        <th>Frequency</th>
+                                        <th>Indication</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for medication in medications %}
+                                    {% set prescription = medication.active_prescription %}
+                                    {% if prescription %}
+                                    <tr>
+                                        <td>{{ medication.name }}</td>
+                                        <td>{{ prescription.dosage }}</td>
+                                        <td>{{ prescription.frequency }}x daily</td>
+                                        <td>{{ prescription.indication or 'N/A' }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Recent Vital Signs -->
+                    {% if vitals %}
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">Recent Vital Signs</h5>
+                            <table class="highlight responsive-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Blood Pressure</th>
+                                        <th>Heart Rate</th>
+                                        <th>Temperature</th>
+                                        <th>O2 Sat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for vital in vitals %}
+                                    <tr>
+                                        <td>{{ vital.recorded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>{{ vital.blood_pressure or '--' }}</td>
+                                        <td>{{ vital.heart_rate or '--' }}</td>
+                                        <td>{{ vital.temperature or '--' }}°C</td>
+                                        <td>{{ vital.oxygen_saturation or '--' }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Recent Lab Tests -->
+                    {% if lab_tests %}
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">Recent Lab Results</h5>
+                            <table class="highlight responsive-table">
+                                <thead>
+                                    <tr>
+                                        <th>Test</th>
+                                        <th>Date</th>
+                                        <th>Result</th>
+                                        <th>Reference</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for test in lab_tests %}
+                                    <tr>
+                                        <td>{{ test.test_name }}</td>
+                                        <td>{{ test.test_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            {{ test.result_value }}
+                                            {% if test.result_unit %}{{ test.result_unit }}{% endif %}
+                                        </td>
+                                        <td>{{ test.reference_range or '--' }}</td>
+                                        <td>
+                                            {% if test.result_status == 'normal' %}
+                                            <span class="badge green">Normal</span>
+                                            {% elif test.result_status == 'abnormal' %}
+                                            <span class="badge orange">Abnormal</span>
+                                            {% else %}
+                                            <span class="badge grey">{{ test.result_status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Summary & Recommendations -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">Summary & Recommendations</h5>
+                            <div class="glass-card" style="padding: 20px; background: rgba(0,0,0,0.2);">
+                                <p class="white-text">
+                                    This report provides a summary of your current health status based on the information 
+                                    recorded in DoseAI. Please review this information with your healthcare provider 
+                                    for personalized medical advice.
+                                </p>
+                                <div class="divider" style="margin: 15px 0;"></div>
+                                <h6 class="cyan-text text-lighten-3">Key Recommendations:</h6>
+                                <ul class="grey-text text-lighten-2">
+                                    <li>Continue taking medications as prescribed</li>
+                                    <li>Schedule regular follow-ups with your healthcare providers</li>
+                                    <li>Monitor vital signs as recommended by your doctor</li>
+                                    <li>Report any new or worsening symptoms promptly</li>
+                                    <li>Maintain a healthy lifestyle with proper diet and exercise</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Print/Export Options -->
+                    <div class="row">
+                        <div class="col s12 center-align" style="margin-top: 30px;">
+                            <button onclick="window.print()" class="btn cyan darken-2 waves-effect waves-light">
+                                <i class="material-icons left">print</i> Print Report
+                            </button>
+                            <button onclick="downloadPDF()" class="btn deep-purple lighten-2 waves-effect waves-light" style="margin-left: 10px;">
+                                <i class="material-icons left">download</i> Download PDF
+                            </button>
+                            <a href="{{ url_for('dashboard.index') }}" class="btn grey waves-effect waves-light" style="margin-left: 10px;">
+                                <i class="material-icons left">close</i> Close
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        nav, footer, .btn, .modal-trigger {
+            display: none !important;
+        }
+        
+        .glass-card {
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+        }
+        
+        .white-text, .grey-text, .cyan-text {
+            color: black !important;
+        }
+        
+        body {
+            background: white !important;
+            color: black !important;
+        }
+        
+        .badge {
+            border: 1px solid #ccc;
+            color: black !important;
+        }
+        
+        .badge.green { background: #c8e6c9 !important; }
+        .badge.orange { background: #ffecb3 !important; }
+        .badge.red { background: #ffcdd2 !important; }
+    }
+    
+    .badge {
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        color: white;
+    }
+</style>
+
+<script>
+    function downloadPDF() {
+        // This would typically involve server-side PDF generation
+        // For now, just alert the user
+        M.toast({
+            html: 'PDF generation would be implemented with a PDF library',
+            classes: 'rounded'
+        });
+    }
+</script>
+{% endblock %}

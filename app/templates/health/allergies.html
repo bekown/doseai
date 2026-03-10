@@ -1,0 +1,624 @@
+<!-- app/health/templates/health/allergies.html -->
+{% extends "layout.html" %}
+
+{% block title %}Allergies - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col s12">
+            <h4 class="white-text"><i class="material-icons left cyan-text text-lighten-3">warning</i>Allergies</h4>
+            <p class="grey-text text-lighten-2">Manage your allergy information</p>
+        </div>
+    </div>
+
+    <!-- Stats & Quick Actions -->
+    <div class="row">
+        <div class="col s12 m3">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <div class="large-text">{{ active_allergies|length }}</div>
+                    <small class="grey-text">Active Allergies</small>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m3">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    {% set severe_allergies = active_allergies|selectattr('severity', 'equalto', 'severe')|list %}
+                    <div class="large-text red-text">{{ severe_allergies|length }}</div>
+                    <small class="grey-text">Severe Allergies</small>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m6">
+            <div class="glass-card center-align">
+                <button class="btn cyan darken-2 waves-effect waves-light" id="add-allergy-btn">
+                    <i class="material-icons left">add</i> Add Allergy
+                </button>
+                <button class="btn deep-purple lighten-2 waves-effect waves-light" style="margin-left: 10px;" id="emergency-card-btn">
+                    <i class="material-icons left">emergency</i> Emergency Card
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Allergies -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h5><i class="material-icons left red-text text-lighten-2">error</i>Active Allergies</h5>
+                        <p class="grey-text text-lighten-2">These allergies require attention</p>
+                    </span>
+                    
+                    {% if active_allergies %}
+                    <div class="allergies-grid">
+                        {% for allergy in active_allergies %}
+                        <div class="allergy-card glass-card" 
+                             style="padding: 20px; margin: 10px 0; 
+                                    {% if allergy.severity == 'severe' %}border-left: 4px solid #f44336;{% endif %}">
+                            <div class="row">
+                                <div class="col s8">
+                                    <h6 class="white-text">{{ allergy.allergen_name }}</h6>
+                                    
+                                    <div class="allergy-meta">
+                                        {% if allergy.type %}
+                                        <span class="badge 
+                                            {% if allergy.type == 'drug' %}red
+                                            {% elif allergy.type == 'food' %}orange
+                                            {% elif allergy.type == 'environmental' %}green
+                                            {% else %}blue{% endif %}">
+                                            {{ allergy.type|title }}
+                                        </span>
+                                        {% endif %}
+                                        
+                                        {% if allergy.severity %}
+                                        <span class="badge 
+                                            {% if allergy.severity == 'severe' %}red
+                                            {% elif allergy.severity == 'moderate' %}orange
+                                            {% else %}yellow{% endif %}">
+                                            {{ allergy.severity|title }}
+                                        </span>
+                                        {% endif %}
+                                        
+                                        {% if allergy.verification_status == 'confirmed' %}
+                                        <span class="badge green">Confirmed</span>
+                                        {% else %}
+                                        <span class="badge yellow">Suspected</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if allergy.reaction %}
+                                    <div class="allergy-reaction">
+                                        <small class="cyan-text text-lighten-3">Reaction:</small>
+                                        <p class="white-text">{{ allergy.reaction }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if allergy.treatment %}
+                                    <div class="allergy-treatment">
+                                        <small class="cyan-text text-lighten-3">Treatment:</small>
+                                        <p class="grey-text text-lighten-2">{{ allergy.treatment|truncate(100) }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if allergy.onset_date %}
+                                    <div class="allergy-date">
+                                        <small class="grey-text text-lighten-2">
+                                            <i class="material-icons tiny">calendar_today</i>
+                                            Since {{ allergy.onset_date.strftime('%b %Y') }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col s4 right-align">
+                                    <div class="allergy-actions">
+                                        <button class="btn-flat cyan-text view-allergy-btn" data-id="{{ allergy.id }}">
+                                            <i class="material-icons">visibility</i>
+                                        </button>
+                                        
+                                        <button class="btn-flat green-text resolve-allergy-btn" data-id="{{ allergy.id }}">
+                                            <i class="material-icons">check</i>
+                                        </button>
+                                        <button class="btn-flat red-text delete-allergy-btn" data-id="{{ allergy.id }}">
+                                            <i class="material-icons">delete</i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="grey-text text-lighten-2 center-align">No active allergies recorded</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resolved Allergies -->
+    {% if resolved_allergies %}
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h5><i class="material-icons left grey-text">check_circle</i>Resolved Allergies</h5>
+                    </span>
+                    
+                    <div class="resolved-allergies">
+                        {% for allergy in resolved_allergies %}
+                        <div class="allergy-card glass-card" style="padding: 15px; margin: 10px 0; opacity: 0.7;">
+                            <div class="row">
+                                <div class="col s10">
+                                    <h6 class="white-text">{{ allergy.allergen_name }}</h6>
+                                    <div class="allergy-meta">
+                                        <span class="badge grey">{{ allergy.type|title if allergy.type else 'Allergy' }}</span>
+                                        <span class="grey-text text-lighten-2">
+                                            Resolved
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col s2 right-align">
+                                    <button class="btn-flat cyan-text view-allergy-btn" data-id="{{ allergy.id }}">
+                                        <i class="material-icons">visibility</i>
+                                    </button>
+                                   <button class="btn-flat red-text delete-allergy-btn" data-id="{{ allergy.id }}">
+                                        <i class="material-icons">delete</i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Allergy Emergency Card (Printable) -->
+    <div class="row" id="emergency-card" style="display: none;">
+        <div class="col s12">
+            <div class="glass-card" style="background: white; color: #333; padding: 30px;">
+                <div class="row">
+                    <div class="col s12 center-align">
+                        <h4 class="red-text"><i class="material-icons left">emergency</i>ALLERGY EMERGENCY CARD</h4>
+                        <hr>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col s6">
+                        <h5>PATIENT INFORMATION</h5>
+                        <p><strong>Name:</strong> {% if current_user.profile.first_name %}{{ current_user.profile.first_name }} {{ current_user.profile.last_name }}{% else %}{{ current_user.username }}{% endif %}</p>
+                        <p><strong>Blood Type:</strong> {{ current_user.profile.blood_type or 'Unknown' }}</p>
+                    </div>
+                    <div class="col s6 right-align">
+                        <h5>EMERGENCY CONTACT</h5>
+                        {% if emergency_contact %}
+                        <p><strong>{{ emergency_contact.name }}</strong></p>
+                        <p>{{ emergency_contact.phone }}</p>
+                        {% else %}
+                        <p>No emergency contact set</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col s12">
+                        <h5 class="red-text">CRITICAL ALLERGIES</h5>
+                        {% set critical_allergies = active_allergies|selectattr('severity', 'equalto', 'severe')|list %}
+                        {% if critical_allergies %}
+                        <ul>
+                            {% for allergy in critical_allergies %}
+                            <li>
+                                <strong>{{ allergy.allergen_name }}</strong> - {{ allergy.reaction }}
+                                {% if allergy.treatment %}
+                                <br><em>Treatment: {{ allergy.treatment }}</em>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p>No severe allergies recorded</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col s12">
+                        <h5>OTHER ALLERGIES</h5>
+                        {% set other_allergies = active_allergies|rejectattr('severity', 'equalto', 'severe')|list %}
+                        {% if other_allergies %}
+                        <ul>
+                            {% for allergy in other_allergies %}
+                            <li>{{ allergy.allergen_name }} - {{ allergy.reaction }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p>No other allergies</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col s12 center-align">
+                        <hr>
+                        <p class="grey-text">Generated on {{ now().strftime('%B %d, %Y') }}</p>
+                        <p class="red-text"><strong>IN CASE OF EMERGENCY, SHOW THIS CARD TO MEDICAL PERSONNEL</strong></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="center-align" style="margin-top: 20px;">
+                <button class="btn cyan darken-2 waves-effect waves-light" onclick="printEmergencyCard()">
+                    <i class="material-icons left">print</i> Print Emergency Card
+                </button>
+                <button class="btn grey waves-effect waves-light" onclick="hideEmergencyCard()">
+                    <i class="material-icons left">close</i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Hover Button For Add Allergy-->
+<div class="fixed-action-btn">
+    <a href="#add-allergy-modal" class="btn-floating btn-large cyan darken-2" id="add-allergy-btn">
+        <i class="large material-icons">add</i>
+    </a>
+</div>
+
+<!-- Add Allergy Modal -->
+<div id="add-allergy-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4>Add Allergy</h4>
+        
+        <form id="add-allergy-form" action="{{ url_for('health.new_allergy') }}" method="POST">
+            <div class="row">
+                <div class="input-field col s12">
+                    <input type="text" id="allergen_name" name="allergen_name" class="white-text" required>
+                    <label for="allergen_name">Allergen Name *</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    <select id="allergy_type" name="type" class="white-text" required>
+                        <option value="" disabled selected>Select Allergy Type</option>
+                        <option value="drug">Drug/Medication</option>
+                        <option value="food">Food</option>
+                        <option value="environmental">Environmental</option>
+                        <option value="insect">Insect</option>
+                        <option value="latex">Latex</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <label>Allergy Type *</label>
+                </div>
+                <div class="input-field col s12 m6">
+                    <select id="allergy_severity" name="severity" class="white-text" required>
+                        <option value="" disabled selected>Select Severity</option>
+                        <option value="mild">Mild</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="severe">Severe</option>
+                    </select>
+                    <label>Severity *</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    <input type="text" id="allergy_reaction" name="reaction" class="white-text" required>
+                    <label for="allergy_reaction">Reaction/Symptoms *</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    <textarea id="allergy_treatment" name="treatment" class="white-text materialize-textarea"></textarea>
+                    <label for="allergy_treatment">Treatment/Management</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    <input type="date" id="onset_date" name="onset_date" class="white-text datepicker">
+                    <label for="onset_date">Onset Date</label>
+                </div>
+                <div class="col s12 m6">
+                    <label>
+                        <input type="checkbox" id="is_confirmed" name="is_confirmed" class="filled-in" checked>
+                        <span class="white-text">Confirmed Allergy</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    <textarea id="allergy_notes" name="notes" class="white-text materialize-textarea"></textarea>
+                    <label for="allergy_notes">Additional Notes</label>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+        <button type="submit" class="btn cyan darken-2" id="save-allergy-btn">Save Allergy</button>
+    </div>
+</div>
+
+<!-- Allergy Detail Modal -->
+<div id="allergy-detail-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4>Allergy Details</h4>
+        <div id="allergy-detail-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Close</button>
+    </div>
+</div>
+
+<style>
+    .allergies-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .allergy-card {
+        transition: all 0.3s ease;
+    }
+    
+    .allergy-card:hover {
+        background: rgba(128, 222, 234, 0.05);
+        transform: translateY(-2px);
+    }
+    
+    .allergy-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 10px 0;
+        align-items: center;
+    }
+    
+    .allergy-reaction,
+    .allergy-treatment {
+        margin-top: 10px;
+    }
+    
+    .allergy-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .resolved-allergies {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    #emergency-card {
+        margin-top: 30px;
+    }
+    
+    @media print {
+        #emergency-card {
+            display: block !important;
+        }
+        
+        .glass-card-navbar,
+        .sidenav,
+        .btn,
+        #emergency-card-btn,
+        #add-allergy-btn {
+            display: none !important;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addModal = M.Modal.init(document.getElementById('add-allergy-modal'));
+        const detailModal = M.Modal.init(document.getElementById('allergy-detail-modal'));
+        
+        // Add Allergy Button
+        document.getElementById('add-allergy-btn').addEventListener('click', function() {
+            addModal.open();
+        });
+        
+        // Emergency Card Button
+        document.getElementById('emergency-card-btn').addEventListener('click', function() {
+            document.getElementById('emergency-card').style.display = 'block';
+            window.scrollTo(0, document.getElementById('emergency-card').offsetTop);
+        });
+        
+        // Delete Allergy
+        document.querySelectorAll('.delete-allergy-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const allergyId = this.getAttribute('data-id');
+                
+                if (confirm('Delete this allergy?')) {
+                    fetch(`/api/allergies/${allergyId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            M.toast({html: data.message, classes: 'green rounded'});
+                            // Remove closest allergy-card
+                            this.closest('.allergy-card').remove();
+                        }
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error deleting allergy', classes: 'red rounded'});
+                    });
+                }
+        // View Allergy Details
+        document.querySelectorAll('.view-allergy-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const allergyId = this.getAttribute('data-id');
+                
+                fetch(`/api/allergies/${allergyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderAllergyDetail(data);
+                        detailModal.open();
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error loading allergy details', classes: 'red rounded'});
+                    });
+            });
+        });
+        
+        // Resolve Allergy
+        document.querySelectorAll('.resolve-allergy-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const allergyId = this.getAttribute('data-id');
+                
+                if (confirm('Mark this allergy as resolved?')) {
+                    fetch(`/api/allergies/${allergyId}/resolve`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            M.toast({html: data.message, classes: 'green rounded'});
+                            location.reload(); // Reload to update status
+                        }
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error resolving allergy', classes: 'red rounded'});
+                    });
+                }
+            });
+        });
+        
+        // Initialize select dropdowns and datepickers
+        M.FormSelect.init(document.querySelectorAll('select'));
+        M.Datepicker.init(document.querySelectorAll('.datepicker'), {
+            format: 'yyyy-mm-dd',
+            autoClose: true
+        });
+        
+        function renderAllergyDetail(data) {
+            const content = document.getElementById('allergy-detail-content');
+            
+            let html = `
+                <div class="allergy-detail-container">
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3">${data.allergen_name}</h5>
+                            <div class="allergy-meta">`;
+            
+            if (data.type) {
+                const typeClass = {
+                    'drug': 'red',
+                    'food': 'orange',
+                    'environmental': 'green',
+                    'insect': 'yellow',
+                    'latex': 'blue'
+                }[data.type] || 'grey';
+                
+                html += `<span class="badge ${typeClass}">
+                    ${data.type.charAt(0).toUpperCase() + data.type.slice(1)}
+                </span>`;
+            }
+            
+            if (data.severity) {
+                const severityClass = {
+                    'severe': 'red',
+                    'moderate': 'orange',
+                    'mild': 'yellow'
+                }[data.severity] || 'grey';
+                
+                html += `<span class="badge ${severityClass}">
+                    ${data.severity.charAt(0).toUpperCase() + data.severity.slice(1)}
+                </span>`;
+            }
+            
+            if (data.verification_status) {
+                const statusClass = data.verification_status === 'confirmed' ? 'green' : 'yellow';
+                html += `<span class="badge ${statusClass}">
+                    ${data.verification_status.charAt(0).toUpperCase() + data.verification_status.slice(1)}
+                </span>`;
+            }
+            
+            if (data.status) {
+                const statusClass = data.status === 'active' ? 'red' : 'grey';
+                html += `<span class="badge ${statusClass}">
+                    ${data.status.charAt(0).toUpperCase() + data.status.slice(1)}
+                </span>`;
+            }
+            
+            html += `</div></div></div>`;
+            
+            // Reaction
+            html += `
+                <div class="row">
+                    <div class="col s12">
+                        <div class="glass-card" style="padding: 15px; margin: 10px 0;">
+                            <h6 class="cyan-text text-lighten-3">Reaction/Symptoms</h6>
+                            <p class="white-text">${data.reaction}</p>
+                        </div>
+                    </div>
+                </div>`;
+            
+            // Treatment
+            if (data.treatment) {
+                html += `
+                    <div class="row">
+                        <div class="col s12">
+                            <div class="glass-card" style="padding: 15px;">
+                                <h6 class="cyan-text text-lighten-3">Treatment/Management</h6>
+                                <p class="white-text">${data.treatment}</p>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            
+            // Additional Information
+            html += `<div class="row">`;
+            
+            if (data.onset_date) {
+                html += `
+                    <div class="col s12 m6">
+                        <div class="glass-card" style="padding: 15px; margin: 10px 0;">
+                            <h6 class="cyan-text text-lighten-3">Onset Date</h6>
+                            <p class="white-text">${new Date(data.onset_date).toLocaleDateString()}</p>
+                        </div>
+                    </div>`;
+            }
+            
+            if (data.notes) {
+                html += `
+                    <div class="col s12 m6">
+                        <div class="glass-card" style="padding: 15px; margin: 10px 0;">
+                            <h6 class="cyan-text text-lighten-3">Additional Notes</h6>
+                            <p class="white-text">${data.notes}</p>
+                        </div>
+                    </div>`;
+            }
+            
+            html += `</div></div>`;
+            content.innerHTML = html;
+        }
+    });
+    
+    function printEmergencyCard() {
+        window.print();
+    }
+    
+    function hideEmergencyCard() {
+        document.getElementById('emergency-card').style.display = 'none';
+    }
+</script>
+{% endblock %}

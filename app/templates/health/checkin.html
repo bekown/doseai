@@ -1,0 +1,309 @@
+<!-- app/health/templates/health/checkin.html -->
+{% extends "layout.html" %}
+
+{% block title %}Daily Check-in - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col s12">
+            <h4 class="white-text"><i class="material-icons left cyan-text text-lighten-3">check_circle</i>Daily Health Check-in</h4>
+            <p class="grey-text text-lighten-2">Complete your daily health assessment</p>
+        </div>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="row">
+        <div class="col s12">
+            <ul class="stepper horizontal">
+                <li class="step active">
+                    <div class="step-title cyan-text text-lighten-3">Medications</div>
+                    <div class="step-content">
+                        <p class="grey-text text-lighten-2">Track medications taken today</p>
+                    </div>
+                </li>
+                <li class="step">
+                    <div class="step-title">Vitals</div>
+                    <div class="step-content">
+                        <p class="grey-text text-lighten-2">Record daily vital signs</p>
+                    </div>
+                </li>
+                <li class="step">
+                    <div class="step-title">Symptoms</div>
+                    <div class="step-content">
+                        <p class="grey-text text-lighten-2">Note any symptoms</p>
+                    </div>
+                </li>
+                <li class="step">
+                    <div class="step-title">Wellness</div>
+                    <div class="step-content">
+                        <p class="grey-text text-lighten-2">Overall assessment</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <form method="POST" action="{{ url_for('health.checkin') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Overall Wellness -->
+                        <div class="row">
+                            <div class="col s12">
+                                <h5 class="cyan-text text-lighten-3">How are you feeling overall today?</h5>
+                                <div class="range-field">
+                                    <input type="range" id="overall_wellness" name="overall_wellness" 
+                                           min="1" max="10" value="{{ form.overall_wellness.data or 5 }}" />
+                                    <div class="range-labels" style="display: flex; justify-content: space-between;">
+                                        <span class="grey-text">Poor</span>
+                                        <span class="grey-text">Excellent</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Medications Section -->
+                        <div class="row">
+                            <div class="col s12">
+                                <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">
+                                    <i class="material-icons left">local_pharmacy</i>
+                                    Medications Taken Today
+                                </h5>
+                                
+                                {% if active_prescriptions %}
+                                <div class="medication-list">
+                                    {% for prescription in active_prescriptions %}
+                                    <div class="medication-item glass-card" style="padding: 15px; margin: 10px 0;">
+                                        <div class="row">
+                                            <div class="col s12 m6">
+                                                <strong class="white-text">{{ prescription.medication.name }}</strong>
+                                                <p class="grey-text text-lighten-2" style="margin: 5px 0;">
+                                                    {{ prescription.dosage }} • {{ prescription.frequency }}x daily
+                                                </p>
+                                            </div>
+                                            <div class="col s12 m3">
+                                                <label>
+                                                    <input type="checkbox" class="filled-in" 
+                                                           name="medications-{{ loop.index0 }}-taken" />
+                                                    <span class="white-text">Taken</span>
+                                                </label>
+                                            </div>
+                                            <div class="col s12 m3">
+                                                <div class="input-field">
+                                                    <input type="text" class="white-text timepicker" 
+                                                           name="medications-{{ loop.index0 }}-time"
+                                                           placeholder="Time" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="grey-text text-lighten-2 center-align">No active prescriptions</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Daily Goals -->
+                        <div class="row">
+                            <div class="col s12">
+                                <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">
+                                    <i class="material-icons left">fitness_center</i>
+                                    Daily Health Goals
+                                </h5>
+                            </div>
+                            
+                            <div class="col s12 m4">
+                                <div class="center-align">
+                                    <i class="material-icons large cyan-text text-lighten-3">local_drink</i>
+                                    <h6 class="white-text">Water Intake</h6>
+                                    <div class="input-field">
+                                        {{ form.water_intake(class="white-text center-align", id="water_intake") }}
+                                        <label for="water_intake">Glasses (8oz)</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col s12 m4">
+                                <div class="center-align">
+                                    <i class="material-icons large cyan-text text-lighten-3">directions_run</i>
+                                    <h6 class="white-text">Exercise</h6>
+                                    <div class="input-field">
+                                        {{ form.exercise_minutes(class="white-text center-align", id="exercise_minutes") }}
+                                        <label for="exercise_minutes">Minutes</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col s12 m4">
+                                <div class="center-align">
+                                    <i class="material-icons large cyan-text text-lighten-3">restaurant</i>
+                                    <h6 class="white-text">Nutrition</h6>
+                                    <div class="input-field">
+                                        {{ form.meals_eaten(class="white-text center-align", id="meals_eaten") }}
+                                        <label for="meals_eaten">Meals Eaten</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Daily Notes -->
+                        <div class="row">
+                            <div class="col s12">
+                                <h5 class="cyan-text text-lighten-3" style="margin-top: 30px;">
+                                    <i class="material-icons left">notes</i>
+                                    Daily Notes
+                                </h5>
+                                <div class="input-field">
+                                    {{ form.daily_notes(class="white-text materialize-textarea", id="daily_notes") }}
+                                    <label for="daily_notes">How was your day? Any concerns?</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="center-align" style="margin-top: 30px;">
+                                    <button type="submit" class="btn waves-effect waves-light cyan darken-2 btn-large">
+                                        <i class="material-icons left">check</i> Complete Check-in
+                                    </button>
+                                    <a href="{{ url_for('dashboard.index') }}" class="btn waves-effect waves-light grey btn-large" style="margin-left: 10px;">
+                                        <i class="material-icons left">close</i> Skip for Today
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips & Reminders -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <h5 class="cyan-text text-lighten-3"><i class="material-icons left">lightbulb</i>Daily Health Tips</h5>
+                    <ul class="collection" style="border: none; background: transparent;">
+                        <li class="collection-item" style="background: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <i class="material-icons tiny cyan-text text-lighten-3">check</i>
+                            <span class="grey-text text-lighten-2">Aim for 8 glasses of water daily</span>
+                        </li>
+                        <li class="collection-item" style="background: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <i class="material-icons tiny cyan-text text-lighten-3">check</i>
+                            <span class="grey-text text-lighten-2">30 minutes of exercise most days</span>
+                        </li>
+                        <li class="collection-item" style="background: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <i class="material-icons tiny cyan-text text-lighten-3">check</i>
+                            <span class="grey-text text-lighten-2">Take medications as prescribed</span>
+                        </li>
+                        <li class="collection-item" style="background: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <i class="material-icons tiny cyan-text text-lighten-3">check</i>
+                            <span class="grey-text text-lighten-2">Note any new or worsening symptoms</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stepper.horizontal {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    .stepper.horizontal:before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: rgba(255,255,255,0.2);
+        z-index: 1;
+    }
+    
+    .step {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        text-align: center;
+        padding: 0 10px;
+    }
+    
+    .step.active .step-title {
+        color: #80deea !important;
+        font-weight: bold;
+    }
+    
+    .step-title {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+        color: rgba(255,255,255,0.6);
+    }
+    
+    .step-content {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.4);
+    }
+    
+    .step:before {
+        content: '';
+        width: 20px;
+        height: 20px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: block;
+        margin: 0 auto 10px;
+    }
+    
+    .step.active:before {
+        background: #80deea;
+        box-shadow: 0 0 10px rgba(128, 222, 234, 0.5);
+    }
+    
+    .medication-item {
+        transition: all 0.3s ease;
+    }
+    
+    .medication-item:hover {
+        background: rgba(128, 222, 234, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .btn-large {
+        min-width: 200px;
+        border-radius: 25px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize time pickers for medication times
+        var timepickers = document.querySelectorAll('.timepicker');
+        M.Timepicker.init(timepickers, {
+            twelveHour: false,
+            autoClose: true
+        });
+        
+        // Range input feedback
+        var wellnessRange = document.getElementById('overall_wellness');
+        wellnessRange.addEventListener('input', function() {
+            // Optional: Update a display value
+        });
+    });
+</script>
+{% endblock %}

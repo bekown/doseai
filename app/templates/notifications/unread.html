@@ -1,0 +1,154 @@
+<!-- templates/notifications/unread.html -->
+{% extends "notifications/index.html" %}
+
+{% block title %}Unread Notifications - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <div class="valign-wrapper">
+                <div>
+                    <h3 class="white-text">Unread Notifications</h3>
+                    <p class="grey-text text-lighten-2">Notifications you haven't read yet</p>
+                </div>
+                <div class="right" style="margin-left: auto;">
+                    <a href="{{ url_for('notifications.mark_all_read') }}" 
+                       class="btn waves-effect waves-light green darken-2"
+                       onclick="return confirm('Mark all notifications as read?')">
+                        <i class="material-icons left">check_all</i> Mark All Read
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="row">
+        {% if notifications.items %}
+            {% for notification in notifications.items %}
+            <div class="col s12">
+                <div class="glass-card notification-card" style="padding: 20px; margin-bottom: 15px; border-left: 4px solid {% if notification.priority == 'urgent' %}#ff4444{% elif notification.priority == 'high' %}#ff9800{% elif notification.priority == 'medium' %}#2196f3{% else %}#4caf50{% endif %};">
+                    <div class="row valign-wrapper" style="margin-bottom: 0;">
+                        <div class="col s1">
+                            {% if notification.type == 'medication_reminder' %}
+                                <i class="material-icons medium cyan-text text-lighten-2">notifications_active</i>
+                            {% elif notification.type == 'refill_reminder' %}
+                                <i class="material-icons medium orange-text">refresh</i>
+                            {% elif notification.type == 'emergency' %}
+                                <i class="material-icons medium red-text">warning</i>
+                            {% else %}
+                                <i class="material-icons medium green-text">info</i>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col s9">
+                            <h6 class="white-text" style="margin-top: 0;">
+                                <span class="new badge red" data-badge-caption="">NEW</span>
+                                {{ notification.title }}
+                            </h6>
+                            <p class="grey-text text-lighten-2" style="margin-bottom: 5px;">{{ notification.message }}</p>
+                            <div class="notification-meta">
+                                <span class="badge white-text" style="background-color: {% if notification.priority == 'urgent' %}#ff4444{% elif notification.priority == 'high' %}#ff9800{% elif notification.priority == 'medium' %}#2196f3{% else %}#4caf50{% endif %}; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                                    {{ notification.priority }}
+                                </span>
+                                <span class="grey-text text-lighten-1" style="margin-left: 10px;">
+                                    <i class="material-icons tiny">access_time</i>
+                                    {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </span>
+                                {% if notification.is_action_required %}
+                                <span class="badge red lighten-1 white-text" style="margin-left: 10px; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                                    Action Required
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col s2 right-align">
+                            <div class="notification-actions">
+                                <a href="{{ url_for('notifications.mark_as_read', notification_id=notification.id) }}" 
+                                   class="btn-floating btn-small waves-effect waves-light green" title="Mark as read">
+                                    <i class="material-icons">check</i>
+                                </a>
+                                
+                                {% if notification.is_action_required %}
+                                <a href="{{ url_for('notifications.take_action', notification_id=notification.id) }}" 
+                                   class="btn-floating btn-small waves-effect waves-light blue" title="Take action">
+                                    <i class="material-icons">play_arrow</i>
+                                </a>
+                                {% endif %}
+                                
+                                <a href="#delete-modal-{{ notification.id }}" 
+                                   class="btn-floating btn-small waves-effect waves-light red modal-trigger" title="Delete">
+                                    <i class="material-icons">delete</i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            <div class="center-align">
+                <ul class="pagination white-text">
+                    {% if notifications.has_prev %}
+                    <li class="waves-effect">
+                        <a href="{{ url_for('notifications.unread', page=notifications.prev_num) }}">
+                            <i class="material-icons">chevron_left</i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="disabled"><a href="#!"><i class="material-icons">chevron_left</i></a></li>
+                    {% endif %}
+                    
+                    {% for page_num in notifications.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                        {% if page_num %}
+                            {% if page_num == notifications.page %}
+                            <li class="active cyan darken-2"><a href="#!">{{ page_num }}</a></li>
+                            {% else %}
+                            <li class="waves-effect">
+                                <a href="{{ url_for('notifications.unread', page=page_num) }}" class="white-text">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="disabled"><a href="#!">...</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if notifications.has_next %}
+                    <li class="waves-effect">
+                        <a href="{{ url_for('notifications.unread', page=notifications.next_num) }}">
+                            <i class="material-icons">chevron_right</i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="disabled"><a href="#!"><i class="material-icons">chevron_right</i></a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% else %}
+            <div class="col s12">
+                <div class="glass-card center-align" style="padding: 50px;">
+                    <i class="material-icons large grey-text text-lighten-1" style="font-size: 64px;">done_all</i>
+                    <h5 class="white-text">No Unread Notifications</h5>
+                    <p class="grey-text text-lighten-2">You're all caught up!</p>
+                    <a href="{{ url_for('notifications.index') }}" class="btn waves-effect waves-light cyan darken-2">
+                        View All Notifications
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize modals
+        var modals = document.querySelectorAll('.modal');
+        M.Modal.init(modals);
+    });
+</script>
+{% endblock %}

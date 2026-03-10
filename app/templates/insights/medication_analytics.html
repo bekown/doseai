@@ -1,0 +1,699 @@
+<!-- templates/insights/medication_analytics.html -->
+{% extends "insights/base_insights.html" %}
+
+{% block insights_content %}
+<!-- Header Section -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="row valign-wrapper">
+                <div class="col s8">
+                    <h4 class="white-text">
+                        <i class="material-icons left">medication</i>Medication Analytics
+                    </h4>
+                    <p class="grey-text text-lighten-2">
+                        Detailed analysis of your medication performance and safety
+                    </p>
+                </div>
+                <div class="col s4 right-align">
+                    <div class="chip glass-card">
+                        <span class="white-text">{{ medications|length }} Active Medications</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Medication Performance Grid -->
+<div class="row">
+    {% for med in medications %}
+    <div class="col s12 m6 l4">
+        <div class="glass-card medication-card">
+            <div class="medication-card-header">
+                <div class="medication-icon">
+                    <i class="material-icons {{ 'green-text' if med.adherence_rate >= 90 else 'yellow-text' if med.adherence_rate >= 70 else 'red-text' }}">
+                        medication
+                    </i>
+                </div>
+                <div class="medication-title">
+                    <h6 class="white-text truncate">{{ med.name }}</h6>
+                    <p class="grey-text text-lighten-2">{{ med.strength }} • {{ med.form }}</p>
+                </div>
+                <div class="medication-status">
+                    <span class="badge {{ 'green' if med.adherence_rate >= 90 else 'yellow' if med.adherence_rate >= 70 else 'red' }}">
+                        {{ "%.1f"|format(med.adherence_rate) }}%
+                    </span>
+                </div>
+            </div>
+            
+            <div class="medication-card-content">
+                <!-- Adherence Progress -->
+                <div class="adherence-section">
+                    <div class="progress-info">
+                        <span class="white-text">Adherence</span>
+                        <span class="right {{ 'green-text' if med.adherence_rate >= 90 else 'yellow-text' if med.adherence_rate >= 70 else 'red-text' }}">
+                            {{ "%.1f"|format(med.adherence_rate) }}%
+                        </span>
+                    </div>
+                    <div class="progress glass-progress">
+                        <div class="determinate {{ 'green' if med.adherence_rate >= 90 else 'yellow' if med.adherence_rate >= 70 else 'red' }}" 
+                             style="width: {{ med.adherence_rate }}%">
+                        </div>
+                    </div>
+                    <div class="dose-stats">
+                        <span class="white-text">{{ med.taken_doses }} taken</span>
+                        <span class="right white-text">{{ med.total_doses - med.taken_doses }} missed</span>
+                    </div>
+                </div>
+                
+                <!-- Side Effects -->
+                {% if med.side_effects %}
+                <div class="side-effects-section">
+                    <h6 class="white-text">Common Side Effects:</h6>
+                    <div class="side-effects-tags">
+                        {% for effect, count in med.side_effects %}
+                        <div class="side-effect-tag">
+                            <span class="white-text">{{ effect }}</span>
+                            <span class="badge">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Timing Patterns -->
+                {% if med.common_times %}
+                <div class="timing-section">
+                    <h6 class="white-text">Common Times:</h6>
+                    <div class="timing-tags">
+                        {% for time in med.common_times %}
+                        <div class="timing-tag">
+                            <i class="material-icons tiny">schedule</i>
+                            <span class="white-text">{{ time.time }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Actions -->
+                <div class="medication-actions">
+                    <a href="{{ url_for('medications.view', medication_id=med.id) }}" 
+                       class="btn-flat cyan-text">
+                        View Details
+                    </a>
+                    {% if med.adherence_rate < 70 %}
+                    <a href="{{ url_for('medications.schedule', medication_id=med.id) }}" 
+                       class="btn-flat red-text">
+                        Improve Adherence
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Safety Analysis -->
+<div class="row">
+    <!-- Drug Interactions -->
+    <div class="col s12 l6">
+        <div class="glass-card safety-card">
+            <div class="safety-card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">warning</i>Drug Interactions
+                </h5>
+                {% set severe_interactions = interactions|selectattr('severity', 'equalto', 'severe')|list %}
+                {% set moderate_interactions = interactions|selectattr('severity', 'equalto', 'moderate')|list %}
+                <span class="badge {{ 'red' if severe_interactions|length > 0 else 'orange' if moderate_interactions|length > 0 else 'green' }}">
+                    {{ interactions|length }} found
+                </span>
+            </div>
+            
+            <div class="safety-card-content">
+                {% if interactions %}
+                <div class="interactions-list">
+                    {% for interaction in interactions %}
+                    <div class="interaction-item {{ 'severe' if interaction.severity == 'severe' else 'moderate' if interaction.severity == 'moderate' else 'mild' }}">
+                        <div class="interaction-header">
+                            <div class="interaction-drugs">
+                                <span class="white-text">{{ interaction.medication1.name }}</span>
+                                <i class="material-icons tiny">add</i>
+                                <span class="white-text">{{ interaction.medication2.name }}</span>
+                            </div>
+                            <span class="severity-badge {{ 'red' if interaction.severity == 'severe' else 'orange' if interaction.severity == 'moderate' else 'yellow' }}">
+                                {{ interaction.severity|title }}
+                            </span>
+                        </div>
+                        <div class="interaction-details">
+                            <p class="grey-text text-lighten-2">{{ interaction.interaction_name }}</p>
+                            <div class="interaction-info">
+                                <span class="info-item">
+                                    <i class="material-icons tiny">info</i>
+                                    <span class="white-text">{{ interaction.effect|truncate(50) }}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="interaction-actions">
+                            <a href="#!" class="btn-flat cyan-text">View Details</a>
+                            {% if interaction.acknowledged %}
+                            <span class="badge green white-text">Acknowledged</span>
+                            {% else %}
+                            <a href="#!" class="btn-flat red-text">Acknowledge</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="center-align no-data">
+                    <i class="material-icons large green-text">check_circle</i>
+                    <p class="white-text">No drug interactions detected</p>
+                    <p class="grey-text text-lighten-2">Your medications are safe to take together</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contraindications -->
+    <div class="col s12 l6">
+        <div class="glass-card safety-card">
+            <div class="safety-card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">block</i>Contraindications
+                </h5>
+                {% set absolute_contraindications = contraindications|selectattr('severity', 'equalto', 'absolute')|list %}
+                <span class="badge {{ 'red' if absolute_contraindications|length > 0 else 'green' }}">
+                    {{ contraindications|length }} found
+                </span>
+            </div>
+            
+            <div class="safety-card-content">
+                {% if contraindications %}
+                <div class="contraindications-list">
+                    {% for contraindication in contraindications %}
+                    <div class="contraindication-item {{ 'absolute' if contraindication.severity == 'absolute' else 'relative' }}">
+                        <div class="contraindication-header">
+                            <div class="contraindication-info">
+                                <span class="white-text">{{ contraindication.medication.name }}</span>
+                                <i class="material-icons tiny">arrow_forward</i>
+                                <span class="white-text">{{ contraindication.contraindication_type|title }}</span>
+                            </div>
+                            <span class="severity-badge {{ 'red' if contraindication.severity == 'absolute' else 'orange' }}">
+                                {{ contraindication.severity|title }}
+                            </span>
+                        </div>
+                        <div class="contraindication-details">
+                            <p class="grey-text text-lighten-2">{{ contraindication.description|truncate(100) }}</p>
+                        </div>
+                        <div class="contraindication-recommendation">
+                            <i class="material-icons tiny blue-text">lightbulb</i>
+                            <span class="white-text">{{ contraindication.recommendation|truncate(80) }}</span>
+                        </div>
+                        <div class="contraindication-actions">
+                            {% if contraindication.acknowledged %}
+                            <span class="badge green white-text">Reviewed</span>
+                            {% else %}
+                            <a href="#!" class="btn-flat red-text">Review Now</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="center-align no-data">
+                    <i class="material-icons large green-text">check_circle</i>
+                    <p class="white-text">No contraindications found</p>
+                    <p class="grey-text text-lighten-2">Your medications are appropriate for your health profile</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Analysis -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">analytics</i>Performance Analysis
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="performance-analysis">
+                    <!-- Top Performers -->
+                    <div class="performance-section">
+                        <h6 class="white-text">Top Performers</h6>
+                        <div class="top-performers">
+                            {% for med in medications|sort(attribute='adherence_rate', reverse=True)[:3] %}
+                            <div class="performer-item">
+                                <div class="performer-info">
+                                    <span class="white-text">{{ med.name }}</span>
+                                    <span class="{{ 'green-text' if med.adherence_rate >= 90 else 'yellow-text' if med.adherence_rate >= 70 else 'red-text' }}">
+                                        {{ "%.1f"|format(med.adherence_rate) }}%
+                                    </span>
+                                </div>
+                                <div class="progress small-progress">
+                                    <div class="determinate {{ 'green' if med.adherence_rate >= 90 else 'yellow' if med.adherence_rate >= 70 else 'red' }}" 
+                                         style="width: {{ med.adherence_rate }}%">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Needs Improvement -->
+                    <div class="performance-section">
+                        <h6 class="white-text">Needs Attention</h6>
+                        {% set low_adherence = medications|selectattr('adherence_rate', '<', 70)|list %}
+                        {% if low_adherence %}
+                        <div class="attention-list">
+                            {% for med in low_adherence[:3] %}
+                            <div class="attention-item">
+                                <div class="attention-info">
+                                    <span class="white-text">{{ med.name }}</span>
+                                    <span class="red-text">{{ "%.1f"|format(med.adherence_rate) }}%</span>
+                                </div>
+                                <div class="attention-actions">
+                                    <a href="#!" class="btn-flat red-text">Set Reminder</a>
+                                    <a href="#!" class="btn-flat cyan-text">Review Schedule</a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="center-align" style="padding: 20px;">
+                            <i class="material-icons green-text">emoji_events</i>
+                            <p class="white-text">All medications performing well!</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Safety Recommendations -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">verified_user</i>Safety Recommendations
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="recommendations-grid">
+                    <div class="recommendation-item">
+                        <div class="recommendation-icon">
+                            <i class="material-icons large cyan-text">schedule</i>
+                        </div>
+                        <div class="recommendation-content">
+                            <h6 class="white-text">Timing Optimization</h6>
+                            <p class="grey-text text-lighten-2">
+                                Space medications with similar side effects throughout the day to minimize discomfort.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendation-item">
+                        <div class="recommendation-icon">
+                            <i class="material-icons large green-text">monitor_heart</i>
+                        </div>
+                        <div class="recommendation-content">
+                            <h6 class="white-text">Monitoring</h6>
+                            <p class="grey-text text-lighten-2">
+                                Monitor for side effects when starting new medications or changing dosages.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendation-item">
+                        <div class="recommendation-icon">
+                            <i class="material-icons large orange-text">local_pharmacy</i>
+                        </div>
+                        <div class="recommendation-content">
+                            <h6 class="white-text">Pharmacy Coordination</h6>
+                            <p class="grey-text text-lighten-2">
+                                Use a single pharmacy for all medications to facilitate interaction checks.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.medication-card {
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.medication-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.medication-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.medication-icon {
+    flex-shrink: 0;
+}
+
+.medication-title {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.medication-status {
+    flex-shrink: 0;
+}
+
+.medication-card-content {
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.adherence-section,
+.side-effects-section,
+.timing-section {
+    margin-bottom: 20px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.dose-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.side-effects-tags,
+.timing-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.side-effect-tag,
+.timing-tag {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    font-size: 12px;
+}
+
+.medication-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.safety-card {
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+}
+
+.safety-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.interactions-list,
+.contraindications-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.interaction-item,
+.contraindication-item {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid transparent;
+}
+
+.interaction-item.severe {
+    border-left-color: #F44336;
+}
+
+.interaction-item.moderate {
+    border-left-color: #FF9800;
+}
+
+.interaction-item.mild {
+    border-left-color: #4CAF50;
+}
+
+.interaction-header,
+.contraindication-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.interaction-drugs,
+.contraindication-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.severity-badge {
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    color: white;
+}
+
+.severity-badge.red {
+    background: #F44336;
+}
+
+.severity-badge.orange {
+    background: #FF9800;
+}
+
+.severity-badge.yellow {
+    background: #FFC107;
+}
+
+.severity-badge.green {
+    background: #4CAF50;
+}
+
+.interaction-info {
+    margin: 10px 0;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.interaction-actions,
+.contraindication-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.contraindication-item.absolute {
+    border-left-color: #F44336;
+}
+
+.contraindication-item.relative {
+    border-left-color: #FF9800;
+}
+
+.contraindication-details {
+    margin: 10px 0;
+}
+
+.contraindication-recommendation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(33, 150, 243, 0.1);
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.no-data {
+    padding: 40px 20px;
+}
+
+.performance-analysis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.performance-section {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.top-performers,
+.attention-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.performer-item,
+.attention-item {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.performer-info,
+.attention-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.attention-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.recommendation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    transition: transform 0.3s ease;
+}
+
+.recommendation-item:hover {
+    transform: translateY(-5px);
+}
+
+.recommendation-icon {
+    flex-shrink: 0;
+}
+
+.recommendation-content {
+    flex-grow: 1;
+}
+
+.small-progress {
+    height: 4px;
+}
+
+/* Scrollbar styling */
+.interactions-list::-webkit-scrollbar,
+.contraindications-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.interactions-list::-webkit-scrollbar-track,
+.contraindications-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.interactions-list::-webkit-scrollbar-thumb,
+.contraindications-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .performance-analysis {
+        grid-template-columns: 1fr;
+    }
+    
+    .recommendations-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .medication-card-header {
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to medication cards
+    const medicationCards = document.querySelectorAll('.medication-card');
+    medicationCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Initialize tooltips for side effects
+    const tooltipElems = document.querySelectorAll('.side-effect-tag, .timing-tag');
+    M.Tooltip.init(tooltipElems, {
+        position: 'top',
+        html: true
+    });
+    
+    // Smooth scroll for interaction items
+    const interactionItems = document.querySelectorAll('.interaction-item');
+    interactionItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            if (!e.target.closest('a')) {
+                this.classList.toggle('expanded');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

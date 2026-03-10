@@ -1,0 +1,910 @@
+<!-- templates/insights/ai_insights.html -->
+{% extends "insights/base_insights.html" %}
+
+{% block insights_content %}
+<!-- Header Section -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card ai-header">
+            <div class="row valign-wrapper">
+                <div class="col s8">
+                    <h4 class="white-text">
+                        <i class="material-icons left">psychology</i>AI Health Insights
+                    </h4>
+                    <p class="grey-text text-lighten-2">
+                        Personalized insights powered by artificial intelligence
+                    </p>
+                </div>
+                <div class="col s4 right-align">
+                    <a href="{{ url_for('insights.refresh_ai_insights') }}" 
+                       class="btn waves-effect waves-light purple lighten-2">
+                        <i class="material-icons left">refresh</i>Refresh Insights
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Insights Dashboard -->
+<div class="row">
+    <!-- Main Insights Grid -->
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">auto_awesome</i>Generated Insights
+                </h5>
+                <span class="badge purple lighten-1">AI-Powered</span>
+            </div>
+            <div class="card-content">
+                {% if insights %}
+                <div class="ai-insights-grid">
+                    {% for insight in insights %}
+                    <div class="ai-insight-card {{ insight.priority }}">
+                        <div class="insight-card-header">
+                            <div class="insight-type">
+                                <i class="material-icons">
+                                    {% if insight.insight_type == 'adherence' %}check_circle
+                                    {% elif insight.insight_type == 'symptom' %}healing
+                                    {% elif insight.insight_type == 'medication' %}medication
+                                    {% else %}lightbulb{% endif %}
+                                </i>
+                                <span class="white-text">{{ insight.insight_type|title }}</span>
+                            </div>
+                            <div class="insight-meta">
+                                <span class="confidence-badge" 
+                                      style="background: rgba(76, 175, 80, {{ insight.confidence_score / 100 }});">
+                                    {{ "%.0f"|format(insight.confidence_score) }}% confident
+                                </span>
+                                <span class="priority-badge {{ insight.priority }}">
+                                    {{ insight.priority|title }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="insight-card-content">
+                            <p class="white-text">{{ insight.insight_text }}</p>
+                            
+                            {% if insight.source_data %}
+                            <div class="insight-data">
+                                <a class="btn-flat cyan-text" onclick="toggleData('data-{{ insight.id }}')">
+                                    <i class="material-icons left">data_usage</i>
+                                    View Analysis Data
+                                </a>
+                                <div id="data-{{ insight.id }}" class="source-data" style="display: none;">
+                                    <pre class="white-text">{{ insight.source_data|tojson(indent=2) }}</pre>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="insight-card-footer">
+                            <div class="insight-date">
+                                <i class="material-icons tiny">schedule</i>
+                                <span class="grey-text text-lighten-2">
+                                    {{ helper.get_relative_time(insight.created_at) }}
+                                </span>
+                            </div>
+                            <div class="insight-actions">
+                                {% if insight.is_dismissed %}
+                                <span class="badge green white-text">Dismissed</span>
+                                {% else %}
+                                <a href="#!" class="btn-flat grey-text dismiss-insight" data-id="{{ insight.id }}">
+                                    <i class="material-icons left">close</i>Dismiss
+                                </a>
+                                {% endif %}
+                                
+                                {% if insight.is_actionable and insight.action_url %}
+                                <a href="{{ insight.action_url }}" class="btn-small waves-effect waves-light purple lighten-2">
+                                    {{ insight.action_label or 'Take Action' }}
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="center-align" style="padding: 60px 20px;">
+                    <div class="ai-loading">
+                        <div class="ai-loader">
+                            <div class="ai-brain">
+                                <i class="material-icons large purple-text">psychology</i>
+                            </div>
+                            <div class="ai-pulse"></div>
+                        </div>
+                        <h5 class="white-text">Generating Insights</h5>
+                        <p class="grey-text text-lighten-2">AI is analyzing your health data...</p>
+                        <p class="grey-text text-lighten-2 small-text">This may take a moment</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Predictions & Trends -->
+<div class="row">
+    <!-- Predictions -->
+    <div class="col s12 m6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">trending_up</i>Health Predictions
+                </h5>
+                <span class="badge deep-orange lighten-1">Forecast</span>
+            </div>
+            <div class="card-content">
+                {% if predictions %}
+                <div class="predictions-list">
+                    {% for prediction in predictions %}
+                    <div class="prediction-item">
+                        <div class="prediction-header">
+                            <div class="prediction-type">
+                                <i class="material-icons {{ 'green-text' if prediction.direction == 'improving' else 'red-text' if prediction.direction == 'declining' else 'yellow-text' }}">
+                                    {% if prediction.type == 'adherence' %}trending_up
+                                    {% elif prediction.type == 'risk' %}warning
+                                    {% else %}insights{% endif %}
+                                </i>
+                                <span class="white-text">{{ prediction.type|title }}</span>
+                            </div>
+                            <span class="confidence-indicator {{ prediction.confidence }}">
+                                {{ prediction.confidence|title }} Confidence
+                            </span>
+                        </div>
+                        <p class="grey-text text-lighten-2">{{ prediction.message }}</p>
+                        <div class="prediction-timeline">
+                            <div class="timeline-track">
+                                <div class="timeline-progress {{ prediction.direction }}"
+                                     style="width: {{ 70 if prediction.confidence == 'high' else 50 if prediction.confidence == 'medium' else 30 }}%">
+                                </div>
+                            </div>
+                            <div class="timeline-labels">
+                                <span class="grey-text text-lighten-2">Now</span>
+                                <span class="grey-text text-lighten-2">Future</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="center-align" style="padding: 40px 20px;">
+                    <i class="material-icons large deep-orange-text">show_chart</i>
+                    <p class="white-text">Analyzing trends...</p>
+                    <p class="grey-text text-lighten-2">More data needed for predictions</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pattern Recognition -->
+    <div class="col s12 m6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">pattern</i>Pattern Recognition
+                </h5>
+                <span class="badge cyan lighten-1">AI Detection</span>
+            </div>
+            <div class="card-content">
+                <div class="patterns-list">
+                    <!-- Example patterns - would be generated by AI -->
+                    <div class="pattern-item">
+                        <div class="pattern-header">
+                            <div class="pattern-icon">
+                                <i class="material-icons green-text">schedule</i>
+                            </div>
+                            <div class="pattern-info">
+                                <h6 class="white-text">Morning Routine Success</h6>
+                                <p class="grey-text text-lighten-2">Higher adherence before 10 AM</p>
+                            </div>
+                        </div>
+                        <div class="pattern-strength">
+                            <div class="strength-label">
+                                <span class="white-text">Pattern Strength:</span>
+                                <span class="green-text">Strong</span>
+                            </div>
+                            <div class="strength-bar">
+                                <div class="strength-fill" style="width: 85%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pattern-item">
+                        <div class="pattern-header">
+                            <div class="pattern-icon">
+                                <i class="material-icons orange-text">mood</i>
+                            </div>
+                            <div class="pattern-info">
+                                <h6 class="white-text">Mood-Medication Link</h6>
+                                <p class="grey-text text-lighten-2">Better adherence on positive mood days</p>
+                            </div>
+                        </div>
+                        <div class="pattern-strength">
+                            <div class="strength-label">
+                                <span class="white-text">Pattern Strength:</span>
+                                <span class="orange-text">Moderate</span>
+                            </div>
+                            <div class="strength-bar">
+                                <div class="strength-fill" style="width: 65%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pattern-item">
+                        <div class="pattern-header">
+                            <div class="pattern-icon">
+                                <i class="material-icons red-text">healing</i>
+                            </div>
+                            <div class="pattern-info">
+                                <h6 class="white-text">Symptom Clustering</h6>
+                                <p class="grey-text text-lighten-2">Symptoms often occur together</p>
+                            </div>
+                        </div>
+                        <div class="pattern-strength">
+                            <div class="strength-label">
+                                <span class="white-text">Pattern Strength:</span>
+                                <span class="red-text">Developing</span>
+                            </div>
+                            <div class="strength-bar">
+                                <div class="strength-fill" style="width: 40%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Explanation & Trust -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">help</i>How AI Insights Work
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="ai-explanation">
+                    <div class="explanation-grid">
+                        <div class="explanation-item">
+                            <div class="explanation-icon">
+                                <i class="material-icons large cyan-text">data_usage</i>
+                            </div>
+                            <div class="explanation-content">
+                                <h6 class="white-text">Data Analysis</h6>
+                                <p class="grey-text text-lighten-2">
+                                    AI analyzes your medication adherence, vital signs, symptoms, and health records to identify patterns.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-item">
+                            <div class="explanation-icon">
+                                <i class="material-icons large green-text">trending_up</i>
+                            </div>
+                            <div class="explanation-content">
+                                <h6 class="white-text">Pattern Recognition</h6>
+                                <p class="grey-text text-lighten-2">
+                                    Machine learning algorithms detect trends and correlations in your health data over time.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="explanation-item">
+                            <div class="explanation-icon">
+                                <i class="material-icons large purple-text">lightbulb</i>
+                            </div>
+                            <div class="explanation-content">
+                                <h6 class="white-text">Insight Generation</h6>
+                                <p class="grey-text text-lighten-2">
+                                    AI generates actionable insights based on medical knowledge and your personal patterns.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="trust-indicators">
+                        <h6 class="white-text">Trust & Transparency</h6>
+                        <div class="indicators-grid">
+                            <div class="indicator-item">
+                                <i class="material-icons green-text">verified</i>
+                                <span class="white-text">Medical Guidelines</span>
+                                <p class="grey-text text-lighten-2 small-text">
+                                    Based on clinical best practices
+                                </p>
+                            </div>
+                            <div class="indicator-item">
+                                <i class="material-icons blue-text">visibility</i>
+                                <span class="white-text">Transparent</span>
+                                <p class="grey-text text-lighten-2 small-text">
+                                    See the data behind each insight
+                                </p>
+                            </div>
+                            <div class="indicator-item">
+                                <i class="material-icons orange-text">warning</i>
+                                <span class="white-text">Limitations</span>
+                                <p class="grey-text text-lighten-2 small-text">
+                                    AI insights complement, don't replace, medical advice
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings & Preferences -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">settings</i>AI Preferences
+                </h5>
+            </div>
+            <div class="card-content">
+                <form id="ai-preferences-form">
+                    <div class="row">
+                        <div class="col s12 m6">
+                            <h6 class="white-text">Insight Types</h6>
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in" checked />
+                                    <span class="white-text">Medication Adherence</span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in" checked />
+                                    <span class="white-text">Health Trends</span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in" checked />
+                                    <span class="white-text">Symptom Patterns</span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in" />
+                                    <span class="white-text">Lifestyle Recommendations</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <h6 class="white-text">Notification Settings</h6>
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in" checked />
+                                    <span class="white-text">High Priority Insights</span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in" checked />
+                                    <span class="white-text">Weekly Summary</span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input type="checkbox" class="filled-in" />
+                                    <span class="white-text">Predictive Alerts</span>
+                                </label>
+                            </p>
+                            
+                            <div class="input-field">
+                                <select>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly" selected>Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                                <label class="white-text">Insight Frequency</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="center-align" style="margin-top: 30px;">
+                        <button class="btn waves-effect waves-light purple lighten-2" type="submit">
+                            <i class="material-icons left">save</i>Save Preferences
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ai-header {
+    padding: 20px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.2), rgba(103, 58, 183, 0.2));
+    margin-bottom: 30px;
+}
+
+.ai-insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.ai-insight-card {
+    padding: 20px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.ai-insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.ai-insight-card.high {
+    border-left-color: #F44336;
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.1), rgba(255, 255, 255, 0.05));
+}
+
+.ai-insight-card.medium {
+    border-left-color: #FF9800;
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(255, 255, 255, 0.05));
+}
+
+.ai-insight-card.low {
+    border-left-color: #4CAF50;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(255, 255, 255, 0.05));
+}
+
+.insight-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.insight-type {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.insight-meta {
+    display: flex;
+    gap: 10px;
+}
+
+.confidence-badge {
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    color: white;
+}
+
+.priority-badge {
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    color: white;
+}
+
+.priority-badge.high {
+    background: #F44336;
+}
+
+.priority-badge.medium {
+    background: #FF9800;
+}
+
+.priority-badge.low {
+    background: #4CAF50;
+}
+
+.insight-card-content {
+    margin: 15px 0;
+}
+
+.insight-data {
+    margin-top: 15px;
+}
+
+.source-data {
+    margin-top: 10px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.source-data pre {
+    margin: 0;
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+
+.insight-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.insight-date {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.insight-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.ai-loading {
+    text-align: center;
+}
+
+.ai-loader {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.ai-brain {
+    position: relative;
+    z-index: 2;
+}
+
+.ai-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(156, 39, 176, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.7;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.3;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.7;
+    }
+}
+
+.predictions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.prediction-item {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.prediction-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.prediction-type {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.confidence-indicator {
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.confidence-indicator.high {
+    background: rgba(76, 175, 80, 0.3);
+    color: #4CAF50;
+}
+
+.confidence-indicator.medium {
+    background: rgba(255, 152, 0, 0.3);
+    color: #FF9800;
+}
+
+.confidence-indicator.low {
+    background: rgba(244, 67, 54, 0.3);
+    color: #F44336;
+}
+
+.prediction-timeline {
+    margin-top: 15px;
+}
+
+.timeline-track {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.timeline-progress {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.timeline-progress.improving {
+    background: linear-gradient(to right, #4CAF50, #81C784);
+}
+
+.timeline-progress.declining {
+    background: linear-gradient(to right, #F44336, #E57373);
+}
+
+.timeline-progress.stable {
+    background: linear-gradient(to right, #FF9800, #FFB74D);
+}
+
+.timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.patterns-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.pattern-item {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.pattern-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.pattern-icon {
+    flex-shrink: 0;
+}
+
+.pattern-info {
+    flex-grow: 1;
+}
+
+.pattern-strength {
+    margin-top: 10px;
+}
+
+.strength-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.strength-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4CAF50, #2196F3);
+    border-radius: 3px;
+}
+
+.ai-explanation {
+    padding: 20px 0;
+}
+
+.explanation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.explanation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    transition: transform 0.3s ease;
+}
+
+.explanation-item:hover {
+    transform: translateY(-5px);
+}
+
+.explanation-icon {
+    flex-shrink: 0;
+}
+
+.explanation-content {
+    flex-grow: 1;
+}
+
+.trust-indicators {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.indicators-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.indicator-item {
+    text-align: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.indicator-item i {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.small-text {
+    font-size: 12px;
+}
+
+/* Form styling */
+#ai-preferences-form label span {
+    color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .ai-insights-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .explanation-grid,
+    .indicators-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .insight-card-header,
+    .insight-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .insight-meta {
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize form select
+    var selectElems = document.querySelectorAll('select');
+    M.FormSelect.init(selectElems);
+    
+    // Toggle source data visibility
+    window.toggleData = function(id) {
+        const element = document.getElementById(id);
+        if (element.style.display === 'none') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    };
+    
+    // Dismiss insight
+    const dismissButtons = document.querySelectorAll('.dismiss-insight');
+    dismissButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const insightId = this.dataset.id;
+            
+            // Show confirmation
+            if (confirm('Dismiss this insight?')) {
+                // In a real app, this would make an API call
+                this.closest('.ai-insight-card').style.opacity = '0.5';
+                this.innerHTML = '<i class="material-icons left">check</i>Dismissed';
+                this.classList.remove('grey-text');
+                this.classList.add('green-text');
+                this.disabled = true;
+                
+                // Show toast
+                M.toast({html: 'Insight dismissed', classes: 'green'});
+            }
+        });
+    });
+    
+    // Handle preferences form
+    const preferencesForm = document.getElementById('ai-preferences-form');
+    if (preferencesForm) {
+        preferencesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Saving...';
+            submitBtn.disabled = true;
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Show success message
+                M.toast({html: 'Preferences saved successfully', classes: 'green'});
+                
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 1500);
+        });
+    }
+    
+    // Add animation to insight cards on scroll
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+    
+    // Observe insight cards
+    document.querySelectorAll('.ai-insight-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(card);
+    });
+});
+</script>
+{% endblock %}

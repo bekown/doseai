@@ -1,0 +1,298 @@
+<!-- templates/notifications/custom.html -->
+{% extends "layout.html" %}
+
+{% block title %}Create Custom Notification - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h3 class="white-text">Create Custom Notification</h3>
+            <p class="grey-text text-lighten-2">Send a custom notification to yourself</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card" style="padding: 30px;">
+                <form method="POST" action="{{ url_for('notifications.create_custom') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Basic Information -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #2196f3; padding-bottom: 10px;">
+                                <i class="material-icons left">info</i>
+                                Basic Information
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.title(class="white-text") }}
+                                {{ form.title.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.message(class="materialize-textarea white-text") }}
+                                {{ form.message.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Type & Priority -->
+                    <div class="row">
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.notification_type(class="white-text") }}
+                                {{ form.notification_type.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.priority(class="white-text") }}
+                                {{ form.priority.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scheduling -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #4caf50; padding-bottom: 10px;">
+                                <i class="material-icons left">schedule</i>
+                                Scheduling
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    {{ form.send_now(class="filled-in") }}
+                                    <span class="white-text">Send Immediately</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12" id="schedule-section" style="{% if form.send_now.data %}display: none;{% endif %}">
+                            <div class="input-field">
+                                {{ form.scheduled_time(class="datetimepicker white-text") }}
+                                {{ form.scheduled_time.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recurrence -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #ff9800; padding-bottom: 10px;">
+                                <i class="material-icons left">repeat</i>
+                                Recurrence
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    {{ form.repeat(class="filled-in") }}
+                                    <span class="white-text">Repeat this notification</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12" id="recurrence-section" style="{% if not form.repeat.data %}display: none;{% endif %}">
+                            <div class="row">
+                                <div class="col s12 m6">
+                                    <div class="input-field">
+                                        {{ form.repeat_frequency(class="white-text") }}
+                                        {{ form.repeat_frequency.label(class="white-text") }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col s12 m6" id="repeat-days-section" style="{% if form.repeat_frequency.data != 'weekly' %}display: none;{% endif %}">
+                                    <div class="input-field">
+                                        {{ form.repeat_days(class="white-text") }}
+                                        {{ form.repeat_days.label(class="white-text") }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col s12 m6">
+                                    <div class="input-field">
+                                        {{ form.repeat_end_date(class="datepicker white-text") }}
+                                        {{ form.repeat_end_date.label(class="white-text") }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col s12 m6">
+                                    <div class="input-field">
+                                        {{ form.repeat_count(class="white-text") }}
+                                        {{ form.repeat_count.label(class="white-text") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Required -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #9c27b0; padding-bottom: 10px;">
+                                <i class="material-icons left">touch_app</i>
+                                Action Settings
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    {{ form.is_action_required(class="filled-in") }}
+                                    <span class="white-text">Action Required</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.action_label(class="white-text") }}
+                                {{ form.action_label.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.action_url(class="white-text") }}
+                                {{ form.action_url.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category & Associations -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #00bcd4; padding-bottom: 10px;">
+                                <i class="material-icons left">category</i>
+                                Category & Associations
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.category(class="white-text") }}
+                                {{ form.category.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.medication_id(class="white-text") }}
+                                {{ form.medication_id.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.prescription_id(class="white-text") }}
+                                {{ form.prescription_id.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.expires_at(class="datetimepicker white-text") }}
+                                {{ form.expires_at.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Data -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #607d8b; padding-bottom: 10px;">
+                                <i class="material-icons left">code</i>
+                                Custom Data (JSON)
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.custom_data(class="materialize-textarea white-text") }}
+                                {{ form.custom_data.label(class="white-text") }}
+                                <span class="helper-text white-text">{{ form.custom_data.description }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row" style="margin-top: 40px;">
+                        <div class="col s12 center-align">
+                            {{ form.submit(class="btn waves-effect waves-light cyan darken-2", style="margin-right: 10px;") }}
+                            
+                            <a href="{{ url_for('notifications.index') }}" class="btn-flat white-text" style="margin-left: 10px;">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date pickers
+        var datepickers = document.querySelectorAll('.datepicker');
+        M.Datepicker.init(datepickers, {
+            format: 'yyyy-mm-dd',
+            autoClose: true
+        });
+        
+        // Initialize datetime pickers
+        var datetimepickers = document.querySelectorAll('.datetimepicker');
+        M.Datepicker.init(datetimepickers, {
+            format: 'yyyy-mm-dd',
+            autoClose: true,
+            yearRange: [2024, 2030],
+            showClearBtn: true,
+            onSelect: function(date) {
+                // Add time picker functionality
+                var instance = M.Timepicker.init(this.el, {
+                    twelveHour: false,
+                    autoClose: true
+                });
+            }
+        });
+        
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        
+        // Toggle schedule section
+        const sendNowCheckbox = document.getElementById('send_now');
+        const scheduleSection = document.getElementById('schedule-section');
+        
+        sendNowCheckbox.addEventListener('change', function() {
+            scheduleSection.style.display = this.checked ? 'none' : 'block';
+        });
+        
+        // Toggle recurrence section
+        const repeatCheckbox = document.getElementById('repeat');
+        const recurrenceSection = document.getElementById('recurrence-section');
+        
+        repeatCheckbox.addEventListener('change', function() {
+            recurrenceSection.style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Toggle repeat days section based on frequency
+        const repeatFrequency = document.getElementById('repeat_frequency');
+        const repeatDaysSection = document.getElementById('repeat-days-section');
+        
+        repeatFrequency.addEventListener('change', function() {
+            repeatDaysSection.style.display = this.value === 'weekly' ? 'block' : 'none';
+        });
+    });
+</script>
+{% endblock %}

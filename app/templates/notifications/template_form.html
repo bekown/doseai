@@ -1,0 +1,198 @@
+<!-- templates/notifications/template_form.html -->
+{% extends "layout.html" %}
+
+{% block title %}{{ title }} - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12 m10 offset-m1">
+            <h3 class="white-text">{{ title }}</h3>
+            <p class="grey-text text-lighten-2">Create a reusable notification template</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s12 m10 offset-m1">
+            <div class="glass-card" style="padding: 30px;">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Basic Information -->
+                    <div class="row">
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.template_name(class="white-text") }}
+                                {{ form.template_name.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.template_type(class="white-text") }}
+                                {{ form.template_type.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Templates -->
+                    <div class="row">
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.title_template(class="white-text") }}
+                                {{ form.title_template.label(class="white-text") }}
+                                <span class="helper-text white-text">{{ form.title_template.description }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.message_template(class="materialize-textarea white-text") }}
+                                {{ form.message_template.label(class="white-text") }}
+                                <span class="helper-text white-text">{{ form.message_template.description }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.available_variables(class="materialize-textarea white-text") }}
+                                {{ form.available_variables.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Default Values -->
+                    <div class="row">
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.default_priority(class="white-text") }}
+                                {{ form.default_priority.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.default_lead_time(class="white-text") }}
+                                {{ form.default_lead_time.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="row">
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    {{ form.is_active(class="filled-in") }}
+                                    <span class="white-text">Active Template</span>
+                                </label>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="row">
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.description(class="materialize-textarea white-text") }}
+                                {{ form.description.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text">Preview</h5>
+                            <div class="glass-card" style="padding: 20px; background: rgba(255,255,255,0.05);">
+                                <h6 id="preview-title" class="white-text">Title Preview</h6>
+                                <p id="preview-message" class="grey-text text-lighten-2">Message preview will appear here...</p>
+                                <div class="preview-meta">
+                                    <span class="badge white-text" style="background-color: #2196f3; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                                        {{ form.default_priority.data|title }}
+                                    </span>
+                                    <span class="grey-text text-lighten-1" style="margin-left: 10px;">
+                                        <i class="material-icons tiny">access_time</i>
+                                        Default lead time: {{ form.default_lead_time.data }} minutes
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row" style="margin-top: 40px;">
+                        <div class="col s12 center-align">
+                            {{ form.submit(class="btn waves-effect waves-light cyan darken-2", style="margin-right: 10px;") }}
+                            
+                            <a href="{{ url_for('notifications.templates') }}" class="btn-flat white-text" style="margin-left: 10px;">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        
+        // Update preview when template type changes
+        const templateType = document.getElementById('template_type');
+        const availableVariables = document.getElementById('available_variables');
+        const titleTemplate = document.getElementById('title_template');
+        const messageTemplate = document.getElementById('message_template');
+        const defaultPriority = document.getElementById('default_priority');
+        
+        function updatePreview() {
+            const titlePreview = document.getElementById('preview-title');
+            const messagePreview = document.getElementById('preview-message');
+            
+            // Update available variables based on template type
+            let variables = '';
+            switch(templateType.value) {
+                case 'medication_reminder':
+                    variables = '{medication_name}, {dosage}, {time}, {frequency}, {next_dose}, {adherence_rate}';
+                    break;
+                case 'refill_reminder':
+                    variables = '{medication_name}, {remaining_days}, {pharmacy_name}, {refill_date}';
+                    break;
+                case 'missed_dose':
+                    variables = '{medication_name}, {scheduled_time}, {hours_late}, {guidance}';
+                    break;
+                case 'health_checkin':
+                    variables = '{user_name}, {date}, {time}, {completion_status}';
+                    break;
+                default:
+                    variables = '{user_name}, {date}, {time}';
+            }
+            
+            availableVariables.value = variables;
+            M.textareaAutoResize(availableVariables);
+            
+            // Update preview
+            titlePreview.textContent = titleTemplate.value || 'Title Preview';
+            messagePreview.textContent = messageTemplate.value || 'Message preview will appear here...';
+            
+            // Update priority badge
+            const priorityBadge = document.querySelector('.preview-meta .badge');
+            priorityBadge.textContent = defaultPriority.value || 'medium';
+            priorityBadge.textContent = priorityBadge.textContent.charAt(0).toUpperCase() + priorityBadge.textContent.slice(1);
+        }
+        
+        // Add event listeners
+        templateType.addEventListener('change', updatePreview);
+        titleTemplate.addEventListener('input', updatePreview);
+        messageTemplate.addEventListener('input', updatePreview);
+        defaultPriority.addEventListener('change', updatePreview);
+        
+        // Initial preview
+        updatePreview();
+    });
+</script>
+{% endblock %}

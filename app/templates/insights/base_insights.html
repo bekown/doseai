@@ -1,0 +1,337 @@
+<!-- templates/insights/base_insights.html -->
+{% extends "layout.html" %}
+
+{% block title %}Insights - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container insights-container">
+    <div class="row">
+        <!-- Insights Sidebar -->
+        <div class="col s12 m4 l3">
+            <div class="glass-card insights-sidebar">
+                <h5 class="white-text center-align" style="margin-top: 0;">
+                    <i class="material-icons left">insights</i>Insights Hub
+                </h5>
+                <div class="divider white-text" style="margin: 15px 0;"></div>
+                
+                <ul class="insights-menu">
+                    <li class="{% if request.endpoint == 'insights.index' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.index') }}" class="waves-effect white-text">
+                            <i class="material-icons left">dashboard</i>Dashboard
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.adherence_analytics' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.adherence_analytics') }}" class="waves-effect white-text">
+                            <i class="material-icons left">trending_up</i>Adherence Analytics
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.health_trends' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.health_trends') }}" class="waves-effect white-text">
+                            <i class="material-icons left">monitor_heart</i>Health Trends
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.medication_analytics' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.medication_analytics') }}" class="waves-effect white-text">
+                            <i class="material-icons left">medication</i>Medication Analytics
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.ai_insights' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.ai_insights') }}" class="waves-effect white-text">
+                            <i class="material-icons left">psychology</i>AI Insights
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.export_data' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.export_data') }}" class="waves-effect white-text">
+                            <i class="material-icons left">download</i>Export Data
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.goals' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.goals') }}" class="waves-effect white-text">
+                            <i class="material-icons left">flag</i>Goals
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="divider white-text" style="margin: 15px 0;"></div>
+                
+                <!-- Quick Stats -->
+                <div class="quick-stats glass-card-inner">
+                    <h6 class="center-align cyan-text text-lighten-2">Quick Stats</h6>
+                    <div class="stat-item">
+                        <span class="white-text">Adherence:</span>
+                        <span class="right {% if adherence_rate >= 90 %}green-text{% elif adherence_rate >= 70 %}yellow-text{% else %}red-text{% endif %}">
+                            {{ "%.1f"|format(adherence_rate) if adherence_rate else '0.0' }}%
+                        </span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="white-text">Wellness Score:</span>
+                        <span class="right {% if wellness_score and wellness_score.total_score >= 80 %}green-text{% elif wellness_score and wellness_score.total_score >= 60 %}yellow-text{% else %}red-text{% endif %}">
+                            {{ wellness_score.total_score if wellness_score else 'N/A' }}
+                        </span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="white-text">Active Meds:</span>
+                        <span class="right white-text">{{ active_medications }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col s12 m8 l9">
+            {% block insights_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<style>
+.insights-container {
+    padding: 20px 0;
+}
+
+.insights-sidebar {
+    padding: 20px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.insights-menu {
+    list-style: none;
+    padding: 0;
+}
+
+.insights-menu li {
+    margin: 5px 0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.insights-menu li:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.insights-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+}
+
+.insights-menu .active-insight {
+    background: linear-gradient(135deg, rgba(3, 169, 244, 0.3), rgba(156, 39, 176, 0.3));
+    border-left: 4px solid #03a9f4;
+}
+
+.glass-card-inner {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+/* Animation for insights cards */
+.insight-card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .insights-sidebar {
+        margin-bottom: 30px;
+    }
+}
+</style>
+{% endblock %}<!-- templates/insights/base_insights.html -->
+{% extends "layout.html" %}
+
+{% block title %}Insights - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container insights-container">
+    <div class="row">
+        <!-- Insights Sidebar -->
+        <div class="col s12 m4 l3">
+            <div class="glass-card insights-sidebar">
+                <h5 class="white-text center-align" style="margin-top: 0;">
+                    <i class="material-icons left">insights</i>Insights Hub
+                </h5>
+                <div class="divider white-text" style="margin: 15px 0;"></div>
+                
+                <ul class="insights-menu">
+                    <li class="{% if request.endpoint == 'insights.index' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.index') }}" class="waves-effect white-text">
+                            <i class="material-icons left">dashboard</i>Dashboard
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.adherence_analytics' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.adherence_analytics') }}" class="waves-effect white-text">
+                            <i class="material-icons left">trending_up</i>Adherence Analytics
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.health_trends' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.health_trends') }}" class="waves-effect white-text">
+                            <i class="material-icons left">monitor_heart</i>Health Trends
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.medication_analytics' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.medication_analytics') }}" class="waves-effect white-text">
+                            <i class="material-icons left">medication</i>Medication Analytics
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.ai_insights' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.ai_insights') }}" class="waves-effect white-text">
+                            <i class="material-icons left">psychology</i>AI Insights
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.export_data' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.export_data') }}" class="waves-effect white-text">
+                            <i class="material-icons left">download</i>Export Data
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'insights.goals' %}active-insight{% endif %}">
+                        <a href="{{ url_for('insights.goals') }}" class="waves-effect white-text">
+                            <i class="material-icons left">flag</i>Goals
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="divider white-text" style="margin: 15px 0;"></div>
+                
+                <!-- Quick Stats -->
+                <div class="quick-stats glass-card-inner">
+                    <h6 class="center-align cyan-text text-lighten-2">Quick Stats</h6>
+                    <div class="stat-item">
+                        <span class="white-text">Adherence:</span>
+                        <span class="right {% if adherence_rate >= 90 %}green-text{% elif adherence_rate >= 70 %}yellow-text{% else %}red-text{% endif %}">
+                            {{ "%.1f"|format(adherence_rate) if adherence_rate else '0.0' }}%
+                        </span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="white-text">Wellness Score:</span>
+                        <span class="right {% if wellness_score and wellness_score.total_score >= 80 %}green-text{% elif wellness_score and wellness_score.total_score >= 60 %}yellow-text{% else %}red-text{% endif %}">
+                            {{ wellness_score.total_score if wellness_score else 'N/A' }}
+                        </span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="white-text">Active Meds:</span>
+                        <span class="right white-text">{{ active_medications }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col s12 m8 l9">
+            {% block insights_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<style>
+.insights-container {
+    padding: 20px 0;
+}
+
+.insights-sidebar {
+    padding: 20px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.insights-menu {
+    list-style: none;
+    padding: 0;
+}
+
+.insights-menu li {
+    margin: 5px 0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.insights-menu li:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.insights-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+}
+
+.insights-menu .active-insight {
+    background: linear-gradient(135deg, rgba(3, 169, 244, 0.3), rgba(156, 39, 176, 0.3));
+    border-left: 4px solid #03a9f4;
+}
+
+.glass-card-inner {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+/* Animation for insights cards */
+.insight-card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .insights-sidebar {
+        margin-bottom: 30px;
+    }
+}
+</style>
+{% endblock %}

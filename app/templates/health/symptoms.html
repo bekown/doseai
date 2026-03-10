@@ -1,0 +1,350 @@
+<!-- app/health/templates/health/symptoms.html -->
+{% extends "layout.html" %}
+
+{% block title %}Symptoms - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col s9">
+            <h4 class="white-text"><i class="material-icons left cyan-text text-lighten-3">warning</i>Symptom Tracker</h4>
+            <p class="grey-text text-lighten-2">Track and monitor your symptoms</p>
+        </div>
+        
+    </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col s12 m4">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <div class="large-text">{{ symptom_stats.total }}</div>
+                    <small class="grey-text">Total Symptoms</small>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m4">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <div class="large-text">{{ symptom_stats.active }}</div>
+                    <small class="grey-text">Active Symptoms</small>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m4">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <div class="large-text">{{ symptom_stats.severe }}</div>
+                    <small class="grey-text">Severe Symptoms</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Symptoms -->
+    <div class="row">    
+        
+        <div class="col s12 m4">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h5>Active Symptoms</h5>
+                    </span>
+                    
+                    {% if active_symptoms %}
+                    <ul class="collection" style="border: none; background: transparent;">
+                        {% for symptom in active_symptoms %}
+                        <li class="collection-item" style="background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s10">
+                                    <strong class="white-text">{{ symptom.name }}</strong>
+                                    <br>
+                                    <small class="grey-text">
+                                        {{ symptom.severity|title }} • {{ symptom.frequency }}
+                                        {% if symptom.body_location %}
+                                        • {{ symptom.body_location }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="col s2 right-align">                                    
+                                        <button type="button" class="btn-flat green-text tooltipped " data-tooltip="Mark Resolved" id="resolve-symptom" data-id="{{ symptom.id }}">
+                                            <i class="material-icons">check</i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="grey-text text-lighten-2 center-align">No active symptoms</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Symptoms Table -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h5>Recent Symptoms</h5>
+                    </span>
+                    
+                    {% if recent_symptoms %}
+                    <table class="highlight responsive-table">
+                        <thead>
+                            <tr>
+                                <th>Symptom</th>
+                                <th>Severity</th>
+                                <th>Location</th>
+                                <th>Duration</th>
+                                <th>Recorded</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for symptom in recent_symptoms %}
+                            <tr>
+                                <td>{{ symptom.name }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if symptom.severity == 'severe' %}red
+                                        {% elif symptom.severity == 'moderate' %}orange
+                                        {% else %}green{% endif %}">
+                                        {{ symptom.severity|title }}
+                                    </span>
+                                </td>
+                                <td>{{ symptom.body_location or 'N/A' }}</td>
+                                <td>
+                                    {% if symptom.duration_minutes %}
+                                        {% if symptom.duration_minutes > 60 %}
+                                            {{ (symptom.duration_minutes // 60) }}h {{ symptom.duration_minutes % 60 }}m
+                                        {% else %}
+                                            {{ symptom.duration_minutes }}m
+                                        {% endif %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ symptom.recorded_at.strftime('%b %d, %H:%M') }}</td>
+                                <td>
+                                    {% if symptom.status == 'active' %}
+                                    <span class="badge orange">Active</span>
+                                    {% else %}
+                                    <span class="badge green">Resolved</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn-flat cyan-text view-symptom-btn" data-id="{{ symptom.id }}">
+                                        <i class="material-icons">visibility</i>
+                                    </button>
+                                    {% if symptom.status == 'active' %}
+                                    <button class="btn-flat green-text resolve-symptom-btn" data-id="{{ symptom.id }}">
+                                        <i class="material-icons">check</i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="grey-text text-lighten-2 center-align">No symptoms recorded yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Add Symptom Modal -->
+<div id="add-symptom-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4>Record New Symptom</h4>
+        <form id="add-symptom-form" action="{{ url_for('health.symptoms') }}" method="POST">
+            <div class="row">
+                <div class="input-field col s12">
+                    <input type="text" id="symptom_name" name="name" class="white-text" required>
+                    <label for="symptom_name">Symptom Name *</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12 m4">
+                    <select id="severity" name="severity" class="white-text" required>
+                        <option value="" disabled selected>Select Severity</option>
+                        <option value="mild">Mild</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="severe">Severe</option>
+                    </select>
+                    <label>Severity</label>
+                </div>
+                <div class="input-field col s12 m4">
+                    <select id="frequency" name="frequency" class="white-text">
+                        <option value="" disabled selected>Select Frequency</option>
+                        <option value="constant">Constant</option>
+                        <option value="intermittent">Intermittent</option>
+                        <option value="occasional">Occasional</option>
+                    </select>
+                    <label>Frequency</label>
+                </div>
+                <div class="input-field col s12 m4">
+                    <input type="text" id="body_location" name="body_location" class="white-text">
+                    <label for="body_location">Body Location</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    <textarea id="notes" name="notes" class="white-text materialize-textarea"></textarea>
+                    <label for="notes">Additional Notes</label>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+        <button type="submit" class="btn cyan darken-2" id="save-symptom-btn">Save Symptom</button>
+    </div>
+</div>
+<!-- Hover Button For Add Symptom -->
+<div class="fixed-action-btn">
+    <a href="#add-symptom-modal" class="btn-floating btn-large cyan darken-2" id="add-symptom-btn">
+        <i class="large material-icons">add</i>
+    </a>
+</div>
+
+<style>
+    .large-text {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .badge {
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+    }
+    
+    table {
+        background: transparent !important;
+    }
+    
+    table th {
+        color: #80deea !important;
+    }
+    
+    table td {
+        color: white !important;
+    }
+    
+    table tbody tr {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltips = document.querySelectorAll('.tooltipped');
+        M.Tooltip.init(tooltips);
+          // Initialize modals
+        const addSymptomModal = M.Modal.init(document.getElementById('add-symptom-modal'));
+        
+        // Add Symptom Button
+        document.getElementById('add-symptom-btn').addEventListener('click', function() {
+            addSymptomModal.open();
+        });
+        
+        // Save Symptom
+        document.getElementById('save-symptom-btn').addEventListener('click', function() {
+            const formData = {
+                name: document.getElementById('symptom_name').value,
+                severity: document.getElementById('severity').value,
+                frequency: document.getElementById('frequency').value,
+                body_location: document.getElementById('body_location').value,
+                notes: document.getElementById('notes').value
+            };
+            
+            fetch('/api/symptoms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    M.toast({html: data.message, classes: 'green rounded'});
+                    addSymptomModal.close();
+                    location.reload(); // Reload to show new symptom
+                }
+            })
+            .catch(error => {
+                M.toast({html: 'Error saving symptom', classes: 'red rounded'});
+            });
+        });
+        
+        // Resolve Symptom
+        document.querySelectorAll('.resolve-symptom-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const symptomId = this.getAttribute('data-id');
+                
+                if (confirm('Mark this symptom as resolved?')) {
+                    fetch(`/api/symptoms/${symptomId}/resolve`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            M.toast({html: data.message, classes: 'green rounded'});
+                            //Remove the button
+                            this.remove();
+                            
+                        }
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error resolving symptom', classes: 'red rounded'});
+                    });
+                }
+            });
+        });
+        // Resolve button in the active sympotm section
+        document.getElementById('resolve-symptom').addEventListener('click', function() {
+            const symptomId = this.getAttribute('data-id');
+            
+            if (confirm('Mark this symptom as resolved?')) {
+                fetch(`/api/symptoms/${symptomId}/resolve`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        M.toast({html: data.message, classes: 'green rounded'});
+                        //Remove the closest list item
+                        this.closest('li').remove();
+                        
+                    }
+                })
+                .catch(error => {
+                    M.toast({html: 'Error resolving symptom', classes: 'red rounded'});
+                });
+            }
+            
+        })
+        
+        
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+    });
+</script>
+{% endblock %}

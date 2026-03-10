@@ -1,0 +1,183 @@
+<!-- templates/notifications/test.html -->
+{% extends "layout.html" %}
+
+{% block title %}Test Notifications - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12 m8 offset-m2">
+            <div class="glass-card" style="padding: 30px;">
+                <div class="center-align">
+                    <i class="material-icons large cyan-text" style="font-size: 64px;">bug_report</i>
+                    <h4 class="white-text">Test Notifications</h4>
+                    <p class="grey-text text-lighten-2">Test your notification settings</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('notifications.test_notifications') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Test Type -->
+                    <div class="input-field">
+                        {{ form.test_type(class="white-text") }}
+                        {{ form.test_type.label(class="white-text") }}
+                    </div>
+                    
+                    <!-- Delivery Methods -->
+                    <div class="input-field">
+                        {{ form.delivery_method(class="white-text") }}
+                        {{ form.delivery_method.label(class="white-text") }}
+                    </div>
+                    
+                    <!-- Test Medication -->
+                    <div class="input-field">
+                        {{ form.medication_id(class="white-text") }}
+                        {{ form.medication_id.label(class="white-text") }}
+                    </div>
+
+                    <!-- Custom Content -->
+                    <div id="custom-content-section" style="{% if form.test_type.data != 'custom' %}display: none;{% endif %}">
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="input-field">
+                                    {{ form.custom_title(class="white-text") }}
+                                    {{ form.custom_title.label(class="white-text") }}
+                                </div>
+                            </div>
+                            
+                            <div class="col s12">
+                                <div class="input-field">
+                                    {{ form.custom_message(class="materialize-textarea white-text") }}
+                                    {{ form.custom_message.label(class="white-text") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Test Timing -->
+                    <div class="row">
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    {{ form.send_immediately(class="filled-in") }}
+                                    <span class="white-text">Send Immediately</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12" id="test-time-section" style="{% if form.send_immediately.data %}display: none;{% endif %}">
+                            <div class="input-field">
+                                {{ form.test_time(class="datetimepicker white-text") }}
+                                {{ form.test_time.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="glass-card" style="padding: 20px; margin: 20px 0; background: rgba(255,255,255,0.05);">
+                        <h6 class="white-text">Preview</h6>
+                        <div id="notification-preview">
+                            <p class="grey-text text-lighten-2">Select options to see preview...</p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col s12 center-align">
+                            {{ form.submit(class="btn waves-effect waves-light cyan darken-2", style="margin-right: 10px;") }}
+                            
+                            <a href="{{ url_for('notifications.index') }}" class="btn-flat white-text" style="margin-left: 10px;">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        
+        // Initialize datetime pickers
+        var datetimepickers = document.querySelectorAll('.datetimepicker');
+        M.Datepicker.init(datetimepickers, {
+            format: 'yyyy-mm-dd',
+            autoClose: true,
+            yearRange: [2024, 2030]
+        });
+        
+        // Toggle custom content section
+        const testType = document.getElementById('test_type');
+        const customContentSection = document.getElementById('custom-content-section');
+        
+        testType.addEventListener('change', function() {
+            customContentSection.style.display = this.value === 'custom' ? 'block' : 'none';
+            updatePreview();
+        });
+        
+        // Toggle test time section
+        const sendImmediately = document.getElementById('send_immediately');
+        const testTimeSection = document.getElementById('test-time-section');
+        
+        sendImmediately.addEventListener('change', function() {
+            testTimeSection.style.display = this.checked ? 'none' : 'block';
+        });
+        
+        // Update preview
+        function updatePreview() {
+            const type = testType.value;
+            const preview = document.getElementById('notification-preview');
+            
+            let title = '', message = '';
+            
+            switch(type) {
+                case 'medication_reminder':
+                    title = '💊 Test Medication Reminder';
+                    message = 'This is a test reminder for your medication.';
+                    break;
+                case 'refill_reminder':
+                    title = '🔄 Test Refill Reminder';
+                    message = 'Your prescription is running low. Time for a refill!';
+                    break;
+                case 'missed_dose':
+                    title = '⚠️ Test Missed Dose Alert';
+                    message = 'You missed a scheduled dose. Please take it as soon as possible.';
+                    break;
+                case 'health_alert':
+                    title = '❤️ Test Health Alert';
+                    message = 'Important health information for you.';
+                    break;
+                case 'system':
+                    title = '🔔 Test System Notification';
+                    message = 'This is a test system notification.';
+                    break;
+                case 'custom':
+                    title = document.getElementById('custom_title').value || 'Custom Notification';
+                    message = document.getElementById('custom_message').value || 'Custom message content';
+                    break;
+            }
+            
+            preview.innerHTML = `
+                <p class="white-text"><strong>${title}</strong></p>
+                <p class="grey-text text-lighten-2">${message}</p>
+                <span class="badge cyan lighten-2 white-text" style="padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                    Test
+                </span>
+            `;
+        }
+        
+        // Add event listeners for preview updates
+        testType.addEventListener('change', updatePreview);
+        document.getElementById('custom_title').addEventListener('input', updatePreview);
+        document.getElementById('custom_message').addEventListener('input', updatePreview);
+        
+        // Initial preview
+        updatePreview();
+    });
+</script>
+{% endblock %}

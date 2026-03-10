@@ -1,0 +1,153 @@
+<!-- templates/notifications/emergency.html -->
+{% extends "layout.html" %}
+
+{% block title %}Emergency Alert - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12 m8 offset-m2">
+            <div class="glass-card emergency-card" style="padding: 30px; border: 2px solid #f44336;">
+                <div class="center-align">
+                    <i class="material-icons large red-text" style="font-size: 64px;">warning</i>
+                    <h4 class="white-text">Send Emergency Alert</h4>
+                    <p class="grey-text text-lighten-2">Use this only for genuine emergencies</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('notifications.emergency') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Emergency Type & Severity -->
+                    <div class="row">
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.emergency_type(class="white-text") }}
+                                {{ form.emergency_type.label(class="white-text") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col s12 m6">
+                            <div class="input-field">
+                                {{ form.severity(class="white-text") }}
+                                {{ form.severity.label(class="white-text") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="input-field">
+                        {{ form.description(class="materialize-textarea white-text") }}
+                        {{ form.description.label(class="white-text") }}
+                    </div>
+                    
+                    <!-- Symptoms -->
+                    <div class="input-field">
+                        {{ form.symptoms(class="materialize-textarea white-text") }}
+                        {{ form.symptoms.label(class="white-text") }}
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #f44336; padding-bottom: 10px;">
+                                <i class="material-icons left">notifications_active</i>
+                                Notify
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12 m4">
+                            <p>
+                                <label>
+                                    {{ form.notify_emergency_contacts(class="filled-in") }}
+                                    <span class="white-text">Emergency Contacts</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m4">
+                            <p>
+                                <label>
+                                    {{ form.notify_healthcare_provider(class="filled-in") }}
+                                    <span class="white-text">Healthcare Provider</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12 m4">
+                            <p>
+                                <label>
+                                    {{ form.call_emergency_services(class="filled-in") }}
+                                    <span class="white-text">Suggest 911/EMS</span>
+                                </label>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Custom Message -->
+                    <div class="input-field">
+                        {{ form.custom_message(class="materialize-textarea white-text") }}
+                        {{ form.custom_message.label(class="white-text") }}
+                        <span class="helper-text white-text">Optional custom message for contacts</span>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="white-text" style="border-bottom: 2px solid #f44336; padding-bottom: 10px;">
+                                <i class="material-icons left">location_on</i>
+                                Location
+                            </h5>
+                        </div>
+                        
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    {{ form.share_location(class="filled-in") }}
+                                    <span class="white-text">Share Location with Contacts</span>
+                                </label>
+                            </p>
+                        </div>
+                        
+                        <div class="col s12">
+                            <div class="input-field">
+                                {{ form.current_location(class="white-text") }}
+                                {{ form.current_location.label(class="white-text") }}
+                                <span class="helper-text white-text">Your current location (optional)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Warning -->
+                    <div class="card red darken-2" style="padding: 20px; margin: 20px 0;">
+                        <div class="center-align white-text">
+                            <i class="material-icons medium">error</i>
+                            <h6>EMERGENCY WARNING</h6>
+                            <p>This alert will notify your emergency contacts and may suggest calling emergency services.</p>
+                            <p><strong>For immediate life-threatening emergencies, call 911 first.</strong></p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col s12 center-align">
+                            {{ form.submit(class="btn waves-effect waves-light red", style="margin-right: 10px;") }}
+                            
+                            <a href="{{ url_for('notifications.index') }}" class="btn-flat white-text" style="margin-left: 10px;">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+    });
+</script>
+{% endblock %}

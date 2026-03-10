@@ -1,0 +1,795 @@
+<!-- templates/insights/export.html -->
+{% extends "insights/base_insights.html" %}
+
+{% block insights_content %}
+<!-- Header Section -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="row valign-wrapper">
+                <div class="col s8">
+                    <h4 class="white-text">
+                        <i class="material-icons left">download</i>Export Health Data
+                    </h4>
+                    <p class="grey-text text-lighten-2">
+                        Download your health records and insights for personal use or sharing with healthcare providers
+                    </p>
+                </div>
+                <div class="col s4 right-align">
+                    <div class="chip glass-card">
+                        <i class="material-icons left">security</i>
+                        <span class="white-text">Secure Export</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="row">
+    <!-- Export Form -->
+    <div class="col s12 m8">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">archive</i>Export Configuration
+                </h5>
+            </div>
+            <div class="card-content">
+                <form method="POST" id="export-form">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Export Format -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h6 class="white-text">Export Format</h6>
+                            <div class="format-selector">
+                                {% for subfield in form.export_format %}
+                                <div class="format-option">
+                                    <input type="radio" id="{{ subfield.id }}" 
+                                           name="{{ form.export_format.name }}" 
+                                           value="{{ subfield.data }}" 
+                                           {% if subfield.checked %}checked{% endif %}>
+                                    <label for="{{ subfield.id }}" class="format-label">
+                                        <div class="format-icon">
+                                            <i class="material-icons">
+                                                {% if subfield.data == 'pdf' %}picture_as_pdf
+                                                {% elif subfield.data == 'csv' %}grid_on
+                                                {% elif subfield.data == 'json' %}code
+                                                {% else %}table_chart{% endif %}
+                                            </i>
+                                        </div>
+                                        <div class="format-info">
+                                            <span class="white-text">{{ subfield.label.text }}</span>
+                                            <span class="grey-text text-lighten-2 format-desc">
+                                                {% if subfield.data == 'pdf' %}Best for printing and sharing
+                                                {% elif subfield.data == 'csv' %}Spreadsheet compatible
+                                                {% elif subfield.data == 'json' %}Developer-friendly format
+                                                {% else %}Excel compatible{% endif %}
+                                            </span>
+                                        </div>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Data Types -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h6 class="white-text">Data to Include</h6>
+                            <div class="data-type-selector">
+                                {% for subfield in form.data_types %}
+                                <div class="data-type-option">
+                                    <input type="radio" id="{{ subfield.id }}" 
+                                           name="{{ form.data_types.name }}" 
+                                           value="{{ subfield.data }}" 
+                                           {% if subfield.checked %}checked{% endif %}>
+                                    <label for="{{ subfield.id }}" class="data-type-label">
+                                        <div class="data-type-icon">
+                                            <i class="material-icons">
+                                                {% if subfield.data == 'all' %}folder
+                                                {% elif subfield.data == 'medications' %}medication
+                                                {% elif subfield.data == 'vitals' %}monitor_heart
+                                                {% elif subfield.data == 'symptoms' %}healing
+                                                {% else %}assessment{% endif %}
+                                            </i>
+                                        </div>
+                                        <div class="data-type-info">
+                                            <span class="white-text">{{ subfield.label.text }}</span>
+                                            <span class="grey-text text-lighten-2 data-type-count">
+                                                {% if subfield.data == 'all' %}All health records
+                                                {% elif subfield.data == 'medications' %}Medications & adherence
+                                                {% elif subfield.data == 'vitals' %}Vital signs history
+                                                {% elif subfield.data == 'symptoms' %}Symptom tracking
+                                                {% else %}Medical evaluations{% endif %}
+                                            </span>
+                                        </div>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Date Range -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h6 class="white-text">Date Range</h6>
+                            <div class="date-range-selector">
+                                {% for subfield in form.date_range %}
+                                <div class="date-range-option">
+                                    <input type="radio" id="{{ subfield.id }}" 
+                                           name="{{ form.date_range.name }}" 
+                                           value="{{ subfield.data }}" 
+                                           {% if subfield.checked %}checked{% endif %}>
+                                    <label for="{{ subfield.id }}" class="date-range-label">
+                                        <span class="white-text">{{ subfield.label.text }}</span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Custom Date Range (shown when 'custom' is selected) -->
+                            <div id="custom-date-range" class="row" style="display: none;">
+                                <div class="col s6">
+                                    <div class="input-field">
+                                        {{ form.start_date(class="datepicker white-text") }}
+                                        {{ form.start_date.label(class="white-text") }}
+                                    </div>
+                                </div>
+                                <div class="col s6">
+                                    <div class="input-field">
+                                        {{ form.end_date(class="datepicker white-text") }}
+                                        {{ form.end_date.label(class="white-text") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Options -->
+                    <div class="row">
+                        <div class="col s12">
+                            <h6 class="white-text">Additional Options</h6>
+                            <div class="additional-options">
+                                <p>
+                                    <label>
+                                        {{ form.include_charts(class="filled-in") }}
+                                        <span class="white-text">Include Charts & Graphs</span>
+                                    </label>
+                                    <span class="option-help grey-text text-lighten-2">
+                                        Visual representations of your data
+                                    </span>
+                                </p>
+                                <p>
+                                    <label>
+                                        {{ form.include_summary(class="filled-in", checked=True) }}
+                                        <span class="white-text">Include Executive Summary</span>
+                                    </label>
+                                    <span class="option-help grey-text text-lighten-2">
+                                        Overview of key health metrics
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Button -->
+                    <div class="center-align" style="margin-top: 40px;">
+                        <button type="submit" class="btn-large waves-effect waves-light cyan darken-2">
+                            <i class="material-icons left">cloud_download</i>
+                            Generate Export
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Preview & Info -->
+    <div class="col s12 m4">
+        <!-- Export Preview -->
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">visibility</i>Export Preview
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="export-preview">
+                    <div class="preview-header">
+                        <div class="preview-icon">
+                            <i class="material-icons large" id="preview-format-icon">picture_as_pdf</i>
+                        </div>
+                        <div class="preview-info">
+                            <h6 class="white-text" id="preview-filename">Health_Report.pdf</h6>
+                            <p class="grey-text text-lighten-2" id="preview-description">
+                                Comprehensive health report with charts and summary
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-details">
+                        <div class="detail-item">
+                            <span class="grey-text text-lighten-2">Estimated Size:</span>
+                            <span class="white-text" id="preview-size">2.4 MB</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="grey-text text-lighten-2">Pages/Records:</span>
+                            <span class="white-text" id="preview-count">24 pages</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="grey-text text-lighten-2">Generation Time:</span>
+                            <span class="white-text" id="preview-time">~30 seconds</span>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-sections">
+                        <h6 class="white-text">Included Sections:</h6>
+                        <ul class="collection glass-collection" id="preview-sections">
+                            <li class="collection-item glass-collection-item">
+                                <i class="material-icons green-text left">check</i>
+                                <span class="white-text">Personal Information</span>
+                            </li>
+                            <li class="collection-item glass-collection-item">
+                                <i class="material-icons green-text left">check</i>
+                                <span class="white-text">Medication History</span>
+                            </li>
+                            <li class="collection-item glass-collection-item">
+                                <i class="material-icons green-text left">check</i>
+                                <span class="white-text">Adherence Analytics</span>
+                            </li>
+                            <li class="collection-item glass-collection-item">
+                                <i class="material-icons green-text left">check</i>
+                                <span class="white-text">Vital Signs History</span>
+                            </li>
+                            <li class="collection-item glass-collection-item">
+                                <i class="material-icons green-text left">check</i>
+                                <span class="white-text">AI Insights Summary</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export Tips -->
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">tips_and_updates</i>Export Tips
+                </h5>
+            </div>
+            <div class="card-content">
+                <ul class="tips-list">
+                    <li class="tip-item">
+                        <i class="material-icons cyan-text left">security</i>
+                        <span class="white-text">All exports are encrypted and secure</span>
+                    </li>
+                    <li class="tip-item">
+                        <i class="material-icons green-text left">medical_services</i>
+                        <span class="white-text">Share PDF reports with healthcare providers</span>
+                    </li>
+                    <li class="tip-item">
+                        <i class="material-icons orange-text left">schedule</i>
+                        <span class="white-text">Large exports may take longer to generate</span>
+                    </li>
+                    <li class="tip-item">
+                        <i class="material-icons purple-text left">backup</i>
+                        <span class="white-text">Store exports for your personal records</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Previous Exports -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">history</i>Previous Exports
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="previous-exports">
+                    <!-- Example export history -->
+                    <div class="export-history-item">
+                        <div class="export-info">
+                            <div class="export-icon">
+                                <i class="material-icons green-text">picture_as_pdf</i>
+                            </div>
+                            <div class="export-details">
+                                <h6 class="white-text">Full Health Report</h6>
+                                <p class="grey-text text-lighten-2">
+                                    Generated 2 days ago • 18 pages • 2.1 MB
+                                </p>
+                            </div>
+                        </div>
+                        <div class="export-actions">
+                            <a href="#!" class="btn-flat cyan-text">
+                                <i class="material-icons left">download</i>Download
+                            </a>
+                            <a href="#!" class="btn-flat red-text">
+                                <i class="material-icons left">delete</i>Delete
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="export-history-item">
+                        <div class="export-info">
+                            <div class="export-icon">
+                                <i class="material-icons blue-text">grid_on</i>
+                            </div>
+                            <div class="export-details">
+                                <h6 class="white-text">Medication History CSV</h6>
+                                <p class="grey-text text-lighten-2">
+                                    Generated 1 week ago • 156 records • 0.8 MB
+                                </p>
+                            </div>
+                        </div>
+                        <div class="export-actions">
+                            <a href="#!" class="btn-flat cyan-text">
+                                <i class="material-icons left">download</i>Download
+                            </a>
+                            <a href="#!" class="btn-flat red-text">
+                                <i class="material-icons left">delete</i>Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="center-align" style="margin-top: 20px;">
+                    <a href="#!" class="btn-flat cyan-text">
+                        <i class="material-icons left">history</i>View All Exports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.format-selector,
+.data-type-selector,
+.date-range-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.format-option,
+.data-type-option,
+.date-range-option {
+    position: relative;
+}
+
+.format-option input[type="radio"],
+.data-type-option input[type="radio"],
+.date-range-option input[type="radio"] {
+    display: none;
+}
+
+.format-label,
+.data-type-label,
+.date-range-label {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.format-label:hover,
+.data-type-label:hover,
+.date-range-label:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.format-option input[type="radio"]:checked + .format-label,
+.data-type-option input[type="radio"]:checked + .data-type-label,
+.date-range-option input[type="radio"]:checked + .date-range-label {
+    background: rgba(3, 169, 244, 0.2);
+    border-color: #03a9f4;
+}
+
+.format-icon,
+.data-type-icon {
+    flex-shrink: 0;
+    margin-right: 15px;
+}
+
+.format-icon i,
+.data-type-icon i {
+    font-size: 36px;
+}
+
+.format-info,
+.data-type-info {
+    flex-grow: 1;
+}
+
+.format-desc,
+.data-type-count {
+    display: block;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.date-range-label {
+    justify-content: center;
+    text-align: center;
+    min-height: 60px;
+    align-items: center;
+}
+
+.additional-options {
+    margin: 20px 0;
+}
+
+.additional-options p {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.additional-options p:last-child {
+    border-bottom: none;
+}
+
+.option-help {
+    display: block;
+    font-size: 12px;
+    margin-left: 30px;
+    margin-top: 5px;
+}
+
+.export-preview {
+    padding: 10px;
+}
+
+.preview-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-icon {
+    flex-shrink: 0;
+}
+
+.preview-info {
+    flex-grow: 1;
+}
+
+.preview-details {
+    margin: 20px 0;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.preview-sections {
+    margin-top: 20px;
+}
+
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.tip-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.previous-exports {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.export-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.export-history-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.export-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-grow: 1;
+}
+
+.export-icon {
+    flex-shrink: 0;
+}
+
+.export-icon i {
+    font-size: 36px;
+}
+
+.export-details {
+    flex-grow: 1;
+}
+
+.export-actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+}
+
+/* Form styling */
+.input-field input[type=text].datepicker,
+.input-field input[type=date] {
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.input-field input[type=text].datepicker:focus,
+.input-field input[type=date]:focus {
+    border-bottom: 1px solid #03a9f4;
+    box-shadow: 0 1px 0 0 #03a9f4;
+}
+
+.input-field label {
+    color: #B0BEC5 !important;
+}
+
+.input-field input[type=text].datepicker:focus + label,
+.input-field input[type=date]:focus + label {
+    color: #03a9f4 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .export-history-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .export-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .format-label,
+    .data-type-label {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .format-icon,
+    .data-type-icon {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date pickers
+    var datepickerElems = document.querySelectorAll('.datepicker');
+    M.Datepicker.init(datepickerElems, {
+        format: 'yyyy-mm-dd',
+        autoClose: true,
+        showClearBtn: true,
+        i18n: {
+            clear: 'Clear',
+            done: 'OK',
+            cancel: 'Cancel'
+        }
+    });
+    
+    // Show/hide custom date range
+    const dateRangeRadios = document.querySelectorAll('input[name="date_range"]');
+    const customDateRange = document.getElementById('custom-date-range');
+    
+    function updateCustomDateRange() {
+        const selectedValue = document.querySelector('input[name="date_range"]:checked').value;
+        if (selectedValue === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    }
+    
+    dateRangeRadios.forEach(radio => {
+        radio.addEventListener('change', updateCustomDateRange);
+    });
+    
+    // Initialize custom date range state
+    updateCustomDateRange();
+    
+    // Update preview based on selections
+    function updatePreview() {
+        const format = document.querySelector('input[name="export_format"]:checked').value;
+        const dataType = document.querySelector('input[name="data_types"]:checked').value;
+        
+        // Update format icon and filename
+        const formatIcon = document.getElementById('preview-format-icon');
+        const filename = document.getElementById('preview-filename');
+        const description = document.getElementById('preview-description');
+        const size = document.getElementById('preview-size');
+        const count = document.getElementById('preview-count');
+        
+        // Update based on format
+        switch(format) {
+            case 'pdf':
+                formatIcon.textContent = 'picture_as_pdf';
+                filename.textContent = 'Health_Report.pdf';
+                description.textContent = 'Comprehensive health report with charts and summary';
+                size.textContent = '2.4 MB';
+                count.textContent = '24 pages';
+                break;
+            case 'csv':
+                formatIcon.textContent = 'grid_on';
+                filename.textContent = 'Health_Data.csv';
+                description.textContent = 'Spreadsheet-compatible data export';
+                size.textContent = '1.8 MB';
+                count.textContent = '156 records';
+                break;
+            case 'json':
+                formatIcon.textContent = 'code';
+                filename.textContent = 'health_data.json';
+                description.textContent = 'Developer-friendly JSON data';
+                size.textContent = '2.1 MB';
+                count.textContent = 'JSON data';
+                break;
+            case 'excel':
+                formatIcon.textContent = 'table_chart';
+                filename.textContent = 'Health_Report.xlsx';
+                description.textContent = 'Excel spreadsheet with multiple sheets';
+                size.textContent = '3.2 MB';
+                count.textContent = '5 sheets';
+                break;
+        }
+        
+        // Update sections list based on data type
+        const sectionsList = document.getElementById('preview-sections');
+        sectionsList.innerHTML = '';
+        
+        let sections = [];
+        switch(dataType) {
+            case 'all':
+                sections = [
+                    {icon: 'person', text: 'Personal Information'},
+                    {icon: 'medication', text: 'Medication History'},
+                    {icon: 'trending_up', text: 'Adherence Analytics'},
+                    {icon: 'monitor_heart', text: 'Vital Signs History'},
+                    {icon: 'healing', text: 'Symptom Tracking'},
+                    {icon: 'assessment', text: 'Medical Evaluations'},
+                    {icon: 'psychology', text: 'AI Insights Summary'}
+                ];
+                break;
+            case 'medications':
+                sections = [
+                    {icon: 'medication', text: 'Active Medications'},
+                    {icon: 'schedule', text: 'Medication Schedule'},
+                    {icon: 'trending_up', text: 'Adherence History'},
+                    {icon: 'warning', text: 'Drug Interactions'},
+                    {icon: 'history', text: 'Prescription History'}
+                ];
+                break;
+            case 'vitals':
+                sections = [
+                    {icon: 'favorite', text: 'Blood Pressure History'},
+                    {icon: 'favorite_border', text: 'Heart Rate Records'},
+                    {icon: 'thermostat', text: 'Temperature Tracking'},
+                    {icon: 'scale', text: 'Weight History'},
+                    {icon: 'straighten', text: 'Height Records'}
+                ];
+                break;
+            case 'symptoms':
+                sections = [
+                    {icon: 'healing', text: 'Symptom History'},
+                    {icon: 'insights', text: 'Symptom Patterns'},
+                    {icon: 'timeline', text: 'Severity Trends'},
+                    {icon: 'event_note', text: 'Symptom Diary'}
+                ];
+                break;
+            case 'evaluations':
+                sections = [
+                    {icon: 'assignment', text: 'Medical Evaluations'},
+                    {icon: 'local_hospital', text: 'Provider Visits'},
+                    {icon: 'science', text: 'Lab Test Results'},
+                    {icon: 'photo', text: 'Imaging Studies'},
+                    {icon: 'note_add', text: 'Clinical Notes'}
+                ];
+                break;
+        }
+        
+        // Add sections to preview
+        sections.forEach(section => {
+            const li = document.createElement('li');
+            li.className = 'collection-item glass-collection-item';
+            li.innerHTML = `
+                <i class="material-icons green-text left">${section.icon}</i>
+                <span class="white-text">${section.text}</span>
+            `;
+            sectionsList.appendChild(li);
+        });
+    }
+    
+    // Listen for changes to update preview
+    const formatRadios = document.querySelectorAll('input[name="export_format"]');
+    const dataTypeRadios = document.querySelectorAll('input[name="data_types"]');
+    
+    formatRadios.forEach(radio => {
+        radio.addEventListener('change', updatePreview);
+    });
+    
+    dataTypeRadios.forEach(radio => {
+        radio.addEventListener('change', updatePreview);
+    });
+    
+    // Initialize preview
+    updatePreview();
+    
+    // Handle form submission
+    const exportForm = document.getElementById('export-form');
+    if (exportForm) {
+        exportForm.addEventListener('submit', function(e) {
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Generating Export...';
+            submitBtn.disabled = true;
+            
+            // In a real app, this would submit the form
+            // For demo, we'll simulate processing
+            setTimeout(() => {
+                // Show success message
+                M.toast({html: 'Export generated successfully! Starting download...', classes: 'green'});
+                
+                // Reset button after a delay
+                setTimeout(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }, 3000);
+            }, 2000);
+            
+            // Prevent actual form submission for demo
+            e.preventDefault();
+        });
+    }
+});
+</script>
+{% endblock %}

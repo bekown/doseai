@@ -1,0 +1,999 @@
+<!-- app/health/templates/health/index.html -->
+{% extends "layout.html" %}
+
+{% block title %}Health Hub - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Welcome Header -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card" style="padding: 30px; background: linear-gradient(135deg, rgba(0,188,212,0.2) 0%, rgba(156,39,176,0.2) 100%);">
+                <div class="row">
+                    <div class="col s12 m8">
+                        <h3 class="white-text">
+                            <i class="material-icons left cyan-text text-lighten-3">dashboard</i>
+                            Health Dashboard
+                        </h3>
+                        <p class="grey-text text-lighten-2" style="font-size: 1.1rem;">
+                            Welcome back, {% if current_user.profile.first_name %}{{ current_user.profile.first_name }}{% else %}{{ current_user.username }}{% endif %}!
+                            {% if today_vitals %}Your last vital check was {{ today_vitals.recorded_at.strftime('%I:%M %p') }}{% endif %}
+                        </p>
+                    </div>
+                    <div class="col s12 m4 right-align">
+                        <div class="date-display cyan-text text-lighten-3">
+                            <div class="day-large">{{ now().strftime('%A') }}</div>
+                            <div class="date-medium">{{ now().strftime('%B %d, %Y') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Status Summary -->
+    <div class="row">
+        <div class="col s12 m3">
+            <div class="glass-card health-status-card">
+                <div class="card-content center-align white-text">
+                    <div class="status-icon" style="background: rgba(76, 175, 80, 0.2);">
+                        <i class="material-icons large green-text">favorite</i>
+                    </div>
+                    <h5>Vitals</h5>
+                    {% if today_vitals %}
+                        {% if today_vitals.bp_category == 'normal' %}
+                        <div class="status-indicator green">Normal</div>
+                        {% elif today_vitals.bp_category == 'elevated' %}
+                        <div class="status-indicator yellow">Elevated</div>
+                        {% else %}
+                        <div class="status-indicator orange">Monitor</div>
+                        {% endif %}
+                        <p class="grey-text text-lighten-2">{{ today_vitals.blood_pressure or '--' }}/{{ today_vitals.heart_rate or '--' }} BPM</p>
+                    {% else %}
+                        <div class="status-indicator grey">No Data</div>
+                        <p class="grey-text text-lighten-2">Record your vitals today</p>
+                    {% endif %}
+                    <a href="{{ url_for('health.vitals') }}" class="btn cyan darken-2 waves-effect waves-light btn-small">View</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col s12 m3">
+            <div class="glass-card health-status-card">
+                <div class="card-content center-align white-text">
+                    <div class="status-icon" style="background: rgba(255, 152, 0, 0.2);">
+                        <i class="material-icons large orange-text">warning</i>
+                    </div>
+                    <h5>Symptoms</h5>
+                    {% if active_symptoms_count > 0 %}
+                    <div class="status-indicator orange">{{ active_symptoms_count }} Active</div>
+                    <p class="grey-text text-lighten-2">
+                        {% if severe_symptoms_count > 0 %}
+                        <span class="red-text">{{ severe_symptoms_count }} severe</span>
+                        {% endif %}
+                    </p>
+                    {% else %}
+                    <div class="status-indicator green">None</div>
+                    <p class="grey-text text-lighten-2">No active symptoms</p>
+                    {% endif %}
+                    <a href="{{ url_for('health.symptoms') }}" class="btn orange waves-effect waves-light btn-small">Track</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col s12 m3">
+            <div class="glass-card health-status-card">
+                <div class="card-content center-align white-text">
+                    <div class="status-icon" style="background: rgba(156, 39, 176, 0.2);">
+                        <i class="material-icons large purple-text">mood</i>
+                    </div>
+                    <h5>Mood</h5>
+                    {% if today_mood %}
+                        <div class="status-indicator 
+                            {% if today_mood.mood_level in ['excellent', 'good'] %}green
+                            {% elif today_mood.mood_level == 'fair' %}yellow
+                            {% else %}orange{% endif %}">
+                            {{ today_mood.mood_level|title }}
+                        </div>
+                        <p class="grey-text text-lighten-2">
+                            Energy: {{ today_mood.energy_level or '--' }}/10
+                        </p>
+                    {% else %}
+                        <div class="status-indicator grey">No Entry</div>
+                        <p class="grey-text text-lighten-2">How are you feeling?</p>
+                    {% endif %}
+                    <a href="{{ url_for('health.mood') }}" class="btn deep-purple lighten-2 waves-effect waves-light btn-small">Log Mood</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col s12 m3">
+            <div class="glass-card health-status-card">
+                <div class="card-content center-align white-text">
+                    <div class="status-icon" style="background: rgba(33, 150, 243, 0.2);">
+                        <i class="material-icons large blue-text">check_circle</i>
+                    </div>
+                    <h5>Check-in</h5>
+                    {% if daily_checkin %}
+                    <div class="status-indicator green">Complete</div>
+                    <p class="grey-text text-lighten-2">
+                        {{ daily_checkin.overall_wellness }}/10 wellness
+                    </p>
+                    {% else %}
+                    <div class="status-indicator orange">Pending</div>
+                    <p class="grey-text text-lighten-2">Daily check-in needed</p>
+                    {% endif %}
+                    <button class="btn blue waves-effect waves-light btn-small" id="quick-checkin-btn">
+                        Check-in
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="row">
+        <!-- Left Column: Quick Actions & Trends -->
+        <div class="col s12 m8">
+            <!-- Quick Actions Panel -->
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <div class="card-content white-text">
+                    <h5 class="cyan-text text-lighten-3">
+                        <i class="material-icons left">bolt</i>
+                        Quick Actions
+                    </h5>
+                    <div class="quick-actions-grid">
+                        <a href="{{ url_for('health.vitals') }}" class="quick-action-btn" data-tooltip="Record vital signs">
+                            <div class="quick-action-icon cyan">
+                                <i class="material-icons">favorite</i>
+                            </div>
+                            <span>Vitals</span>
+                        </a>
+                        
+                        <a href="{{ url_for('health.symptoms') }}" class="quick-action-btn" data-tooltip="Track symptoms">
+                            <div class="quick-action-icon orange">
+                                <i class="material-icons">warning</i>
+                            </div>
+                            <span>Symptoms</span>
+                        </a>
+                        
+                        <a href="{{ url_for('health.mood') }}" class="quick-action-btn" data-tooltip="Log mood">
+                            <div class="quick-action-icon purple">
+                                <i class="material-icons">mood</i>
+                            </div>
+                            <span>Mood</span>
+                        </a>
+                        
+                        <a href="{{ url_for('health.checkin') }}" class="quick-action-btn" data-tooltip="Daily check-in">
+                            <div class="quick-action-icon green">
+                                <i class="material-icons">check_circle</i>
+                            </div>
+                            <span>Check-in</span>
+                        </a>
+                        
+                        <a href="{{ url_for('health.medications') }}" class="quick-action-btn" data-tooltip="Medication tracker">
+                            <div class="quick-action-icon blue">
+                                <i class="material-icons">medication</i>
+                            </div>
+                            <span>Medications</span>
+                        </a>
+                        
+                        <a href="{{ url_for('health.evaluations') }}" class="quick-action-btn" data-tooltip="Medical evaluations">
+                            <div class="quick-action-icon red">
+                                <i class="material-icons">medical_services</i>
+                            </div>
+                            <span>Evaluations</span>
+                        </a>
+                        
+                        <a href="{{ url_for('health.allergies') }}" class="quick-action-btn" data-tooltip="Allergies">
+                            <div class="quick-action-icon yellow">
+                                <i class="material-icons">warning</i>
+                            </div>
+                            <span>Allergies</span>
+                        </a>
+                        
+                        <a href="{{ url_for('health.conditions') }}" class="quick-action-btn" data-tooltip="Conditions">
+                            <div class="quick-action-icon red">
+                                <i class="material-icons">local_hospital</i>
+                            </div>
+                            <span>Conditions</span>
+                        </a>
+                        <!--Lab Tests-->
+                        <a href="{{ url_for('health.labtests') }}" class="quick-action-btn" data-tooltip="Lab Tests">
+                            <div class="quick-action-icon red">
+                                <i class="material-icons">science</i>
+                            </div>
+                            <span>Lab Tests</span>
+                        </a>
+                        <!--Imaging -->
+                        <a href="{{ url_for('health.imaging') }}" class="quick-action-btn" data-tooltip="Imaging">
+                            <div class="quick-action-icon red">
+                                <i class="material-icons">image</i>
+                            </div>
+                            <span>Imaging</span>
+                        </a>                       
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Trends Chart -->
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <h5 class="cyan-text text-lighten-3">
+                        <i class="material-icons left">trending_up</i>
+                        Health Trends
+                    </h5>
+                    <div class="trends-tabs">
+                        <div class="tabs-wrapper">
+                            <ul class="tabs">
+                                <li class="tab"><a href="#bp-trend" class="active">Blood Pressure</a></li>
+                                <li class="tab"><a href="#mood-trend">Mood</a></li>
+                                <li class="tab"><a href="#symptom-trend">Symptoms</a></li>
+                            </ul>
+                        </div>
+                        <div id="bp-trend" class="chart-container" style="height: 250px;"></div>
+                        <div id="mood-trend" class="chart-container" style="height: 250px; display: none;"></div>
+                        <div id="symptom-trend" class="chart-container" style="height: 250px; display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Reminders & Upcoming -->
+        <div class="col s12 m4">
+            <!-- Daily Reminders -->
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <div class="card-content white-text">
+                    <h5 class="cyan-text text-lighten-3">
+                        <i class="material-icons left">notifications</i>
+                        Today's Reminders
+                    </h5>                    
+                        
+                    {% if not daily_checkin %}
+                    <div class="reminder-item">
+                        <div class="reminder-icon green">
+                            <i class="material-icons">check_circle</i>
+                        </div>
+                        <div class="reminder-content">
+                            <strong>Daily Check-in</strong>
+                            <p class="grey-text text-lighten-2">Complete your daily health assessment</p>
+                        </div>
+                        <button class="btn-flat cyan-text" id="reminder-checkin-btn">
+                            <i class="material-icons">arrow_forward</i>
+                        </button>
+                    </div>
+                    {% endif %}
+                    
+                </div>
+            </div>
+
+            <!-- Upcoming Appointments -->
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <h5 class="cyan-text text-lighten-3">
+                        <i class="material-icons left">event</i>
+                        Upcoming Appointments
+                    </h5>
+                    <div class="appointments-list">
+                        {% if upcoming_appointments %}
+                            {% for appointment in upcoming_appointments %}
+                            <div class="appointment-item">
+                                <div class="appointment-date">
+                                    <div class="date-day">{{ appointment.date.strftime('%d') }}</div>
+                                    <div class="date-month">{{ appointment.date.strftime('%b') }}</div>
+                                </div>
+                                <div class="appointment-details">
+                                    <strong>{{ appointment.provider_name }}</strong>
+                                    <p class="grey-text text-lighten-2">{{ appointment.type|replace('_', ' ')|title }}</p>
+                                    <small class="cyan-text">{{ appointment.time|default('Time TBD') }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="grey-text text-lighten-2 center-align">No upcoming appointments</p>
+                        {% endif %}
+                        
+                        <div class="center-align" style="margin-top: 15px;">
+                            <a href="{{ url_for('health.evaluations') }}" class="cyan-text text-lighten-3">
+                                View All Appointments <i class="material-icons tiny">chevron_right</i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Score Widget -->
+            <div class="glass-card" style="margin-top: 20px;">
+                <div class="card-content white-text center-align">
+                    <h5 class="cyan-text text-lighten-3">Health Score</h5>
+                    <div class="health-score-container">
+                        <div class="score-circle" data-score="{{ health_score|default(75) }}">
+                            <div class="score-value">{{ health_score|default(75) }}</div>
+                            <div class="score-label">/100</div>
+                        </div>
+                        <div class="score-breakdown">
+                            <div class="score-metric">
+                                <span class="metric-label">Adherence</span>
+                                <div class="metric-bar">
+                                    <div class="metric-fill" style="width: {{ adherence_score|default(85) }}%"></div>
+                                </div>
+                            </div>
+                            <div class="score-metric">
+                                <span class="metric-label">Vitals</span>
+                                <div class="metric-bar">
+                                    <div class="metric-fill" style="width: {{ vitals_score|default(90) }}%"></div>
+                                </div>
+                            </div>
+                            <div class="score-metric">
+                                <span class="metric-label">Lifestyle</span>
+                                <div class="metric-bar">
+                                    <div class="metric-fill" style="width: {{ lifestyle_score|default(70) }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--Health Summary and Report Links-->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <div class="health-summary row">
+                        <div class="col s6">
+                            <h5 class="cyan-text text-lighten-3">
+                                <i class="material-icons left">assessment</i>
+                                Health Summary
+                            </h5>
+                            <p class="grey-text text-lighten-2">View a summary of your health status</p>
+                        </div>
+                        <div class="col s6 right-align">
+                            <a href="{{ url_for('health.summary') }}" class="btn-flat cyan-text">
+                                <i class="material-icons left">assessment</i>
+                                View Summary
+                            </a>
+                        </div>
+                        
+                    </div>
+                    <div class="health-report row">
+                        <div class="col s6">
+                            <h5 class="cyan-text text-lighten-3">
+                                <i class="material-icons left">assessment</i>
+                                Health Report
+                            </h5>
+                            <p class="grey-text text-lighten-2">View a detailed health report</p>
+                        </div>
+                        <div class="col s6 right-align">
+                            <a href="{{ url_for('health.report') }}" class="btn-flat cyan-text">
+                                <i class="material-icons left">assessment</i>
+                                View Report
+                            </a>
+                        </div>
+                </div>
+            </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <div class="row">
+                        <div class="col s6">
+                            <h5 class="cyan-text text-lighten-3">
+                                <i class="material-icons left">history</i>
+                                Recent Activity
+                            </h5>
+                        </div>
+                        <div class="col s6 right-align">
+                            <div class="activity-filter">
+                                <button class="btn-flat cyan-text filter-btn active" data-filter="all">All</button>
+                                <button class="btn-flat cyan-text filter-btn" data-filter="vitals">Vitals</button>
+                                <button class="btn-flat cyan-text filter-btn" data-filter="medications">Medications</button>
+                                <button class="btn-flat cyan-text filter-btn" data-filter="symptoms">Symptoms</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-timeline" id="activity-timeline">
+                        {% for activity in recent_activities %}
+                        <div class="activity-item" data-type="{{ activity.type }}">
+                            <div class="activity-time">
+                                {{ activity.time.strftime('%I:%M %p') }}
+                            </div>
+                            <div class="activity-icon {{ activity.type }}">
+                                <i class="material-icons">{{ activity.icon }}</i>
+                            </div>
+                            <div class="activity-content">
+                                <p class="white-text">{{ activity.description }}</p>
+                                <small class="grey-text text-lighten-2">{{ activity.details }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Check-in Modal -->
+<div id="quick-checkin-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4>Quick Daily Check-in</h4>
+        <form id="quick-checkin-form">
+            <div class="row">
+                <div class="col s12">
+                    <h6 class="cyan-text text-lighten-3">How are you feeling right now?</h6>
+                    <div class="mood-selector-quick">
+                        {% for mood in [('excellent', '😊'), ('good', '🙂'), ('fair', '😐'), ('poor', '😔')] %}
+                        <label class="mood-option-quick">
+                            <input type="radio" name="quick_mood" value="{{ mood[0] }}" class="with-gap">
+                            <span class="mood-emoji-quick">{{ mood[1] }}</span>
+                            <span class="mood-label">{{ mood[0]|title }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s12">
+                    <div class="input-field">
+                        <textarea id="quick_notes" class="white-text materialize-textarea" placeholder="Any quick notes about how you're feeling..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+        <button type="button" class="btn cyan darken-2" id="submit-quick-checkin">Submit</button>
+    </div>
+</div>
+
+<style>
+    /* Dashboard Specific Styles */
+    .health-status-card {
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .health-status-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .status-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+    }
+    
+    .status-indicator {
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 10px auto;
+        display: inline-block;
+    }
+    
+    .date-display .day-large {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .date-display .date-medium {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    /* Quick Actions */
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .quick-action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+        text-align: center;
+        color: white;
+    }
+    
+    .quick-action-btn:hover {
+        background: rgba(128, 222, 234, 0.1);
+        transform: translateY(-3px);
+    }
+    
+    .quick-action-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    
+    .quick-action-icon.cyan { background: rgba(0, 188, 212, 0.2); }
+    .quick-action-icon.orange { background: rgba(255, 152, 0, 0.2); }
+    .quick-action-icon.purple { background: rgba(156, 39, 176, 0.2); }
+    .quick-action-icon.green { background: rgba(76, 175, 80, 0.2); }
+    .quick-action-icon.blue { background: rgba(33, 150, 243, 0.2); }
+    .quick-action-icon.red { background: rgba(244, 67, 54, 0.2); }
+    
+    /* Reminders */
+    .reminders-list {
+        margin-top: 15px;
+    }
+    
+    .reminder-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .reminder-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .reminder-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .reminder-icon.blue { background: rgba(33, 150, 243, 0.2); }
+    .reminder-icon.green { background: rgba(76, 175, 80, 0.2); }
+    
+    .reminder-content {
+        flex-grow: 1;
+    }
+    
+    /* Appointments */
+    .appointments-list {
+        margin-top: 15px;
+    }
+    
+    .appointment-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .appointment-date {
+        text-align: center;
+        padding: 10px;
+        background: rgba(0, 188, 212, 0.2);
+        border-radius: 8px;
+        margin-right: 15px;
+        min-width: 60px;
+    }
+    
+    .date-day {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .date-month {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+    
+    /* Health Score */
+    .health-score-container {
+        margin-top: 20px;
+    }
+    
+    .score-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        margin: 0 auto 20px;
+        background: conic-gradient(
+            #4caf50 0% 75%,
+            #ff9800 75% 90%,
+            #f44336 90% 100%
+        );
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .score-circle:before {
+        content: '';
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        background: #1a1a2e;
+        border-radius: 50%;
+    }
+    
+    .score-value {
+        position: relative;
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: white;
+        z-index: 1;
+    }
+    
+    .score-label {
+        position: relative;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        z-index: 1;
+        margin-top: -10px;
+    }
+    
+    .score-breakdown {
+        margin-top: 20px;
+    }
+    
+    .score-metric {
+        margin-bottom: 10px;
+    }
+    
+    .metric-label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .metric-bar {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .metric-fill {
+        height: 100%;
+        background: #00acc1;
+        border-radius: 3px;
+        transition: width 1s ease;
+    }
+    
+    /* Activity Timeline */
+    .activity-timeline {
+        margin-top: 20px;
+        position: relative;
+    }
+    
+    .activity-timeline:before {
+        content: '';
+        position: absolute;
+        left: 30px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .activity-item {
+        display: flex;
+        margin-bottom: 20px;
+        position: relative;
+        padding-left: 60px;
+        transition: opacity 0.3s ease;
+    }
+    
+    .activity-time {
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: #80deea;
+        font-size: 0.9rem;
+        width: 50px;
+        text-align: right;
+        padding-right: 10px;
+    }
+    
+    .activity-icon {
+        position: absolute;
+        left: 20px;
+        top: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+    
+    .activity-icon.vitals { background: rgba(0, 188, 212, 0.2); }
+    .activity-icon.medications { background: rgba(33, 150, 243, 0.2); }
+    .activity-icon.symptoms { background: rgba(255, 152, 0, 0.2); }
+    .activity-icon.mood { background: rgba(156, 39, 176, 0.2); }
+    .activity-icon.checkin { background: rgba(76, 175, 80, 0.2); }
+    
+    .activity-content {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+        flex-grow: 1;
+        transition: all 0.3s ease;
+    }
+    
+    .activity-item:hover .activity-content {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    
+    /* Quick Check-in Modal */
+    .mood-selector-quick {
+        display: flex;
+        justify-content: space-around;
+        margin: 20px 0;
+    }
+    
+    .mood-option-quick {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+    }
+    
+    .mood-emoji-quick {
+        font-size: 3rem;
+        margin-bottom: 5px;
+        transition: transform 0.3s ease;
+    }
+    
+    .mood-option-quick input[type="radio"]:checked + .mood-emoji-quick {
+        transform: scale(1.2);
+    }
+    
+    .mood-label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    /* Chart Container */
+    .chart-container {
+        position: relative;
+        margin-top: 20px;
+    }
+    
+    .tabs-wrapper {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 5px;
+    }
+    
+    /* Responsive */
+    @media only screen and (max-width: 992px) {
+        .quick-actions-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .health-status-card {
+            margin-bottom: 20px;
+        }
+    }
+    
+    @media only screen and (max-width: 600px) {
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .mood-selector-quick {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize components
+        const quickCheckinModal = M.Modal.init(document.getElementById('quick-checkin-modal'));
+        
+        // Quick Check-in Button
+        document.getElementById('quick-checkin-btn').addEventListener('click', function() {
+            quickCheckinModal.open();
+        });
+        
+        document.getElementById('reminder-checkin-btn').addEventListener('click', function() {
+            quickCheckinModal.open();
+        });
+        
+        // Submit Quick Check-in
+        document.getElementById('submit-quick-checkin').addEventListener('click', function() {
+            const mood = document.querySelector('input[name="quick_mood"]:checked');
+            const notes = document.getElementById('quick_notes').value;
+            
+            if (!mood) {
+                M.toast({html: 'Please select your mood', classes: 'orange rounded'});
+                return;
+            }
+            
+            fetch('/api/daily-checkin/quick', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mood_level: mood.value,
+                    notes: notes,
+                    recorded_at: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    M.toast({html: 'Quick check-in complete!', classes: 'green rounded'});
+                    quickCheckinModal.close();
+                    setTimeout(() => location.reload(), 1000);
+                }
+            })
+            .catch(error => {
+                M.toast({html: 'Error saving check-in', classes: 'red rounded'});
+            });
+        });
+        
+        
+        
+        // Activity Filter
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const filter = this.getAttribute('data-filter');
+                
+                // Update active button
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filter activities
+                const activities = document.querySelectorAll('.activity-item');
+                activities.forEach(activity => {
+                    if (filter === 'all' || activity.getAttribute('data-type') === filter) {
+                        activity.style.display = 'flex';
+                    } else {
+                        activity.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Tab Switching
+        document.querySelectorAll('.tab a').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Hide all charts
+                document.querySelectorAll('.chart-container').forEach(chart => {
+                    chart.style.display = 'none';
+                });
+                
+                // Show selected chart
+                const targetId = this.getAttribute('href').substring(1);
+                document.getElementById(targetId).style.display = 'block';
+                
+                // Initialize chart if not already initialized
+                if (targetId === 'bp-trend' && !window.bpChart) {
+                    loadBPChart();
+                } else if (targetId === 'mood-trend' && !window.moodChart) {
+                    loadMoodChart();
+                } else if (targetId === 'symptom-trend' && !window.symptomChart) {
+                    loadSymptomChart();
+                }
+            });
+        });
+        
+        // Load initial chart
+        loadBPChart();
+    });
+    
+    // Chart Functions
+    function loadBPChart() {
+        const ctx = document.getElementById('bp-trend').getContext('2d');
+        window.bpChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [
+                    {
+                        label: 'Systolic',
+                        data: [120, 118, 122, 119, 121, 117, 120],
+                        borderColor: '#ef5350',
+                        backgroundColor: 'rgba(239, 83, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Diastolic',
+                        data: [80, 78, 82, 79, 81, 77, 80],
+                        borderColor: '#42a5f5',
+                        backgroundColor: 'rgba(66, 165, 245, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: 'white' }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(30, 30, 46, 0.9)',
+                        titleColor: '#80deea',
+                        bodyColor: 'white'
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#ccc' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    y: {
+                        ticks: { color: '#ccc' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    }
+                }
+            }
+        });
+    }
+    
+    function loadMoodChart() {
+        const ctx = document.getElementById('mood-trend').getContext('2d');
+        window.moodChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Mood Score',
+                    data: [4, 3, 5, 4, 3, 5, 4],
+                    backgroundColor: [
+                        'rgba(128, 222, 234, 0.6)',
+                        'rgba(255, 152, 0, 0.6)',
+                        'rgba(128, 222, 234, 0.6)',
+                        'rgba(128, 222, 234, 0.6)',
+                        'rgba(255, 152, 0, 0.6)',
+                        'rgba(128, 222, 234, 0.6)',
+                        'rgba(128, 222, 234, 0.6)'
+                    ],
+                    borderColor: '#80deea',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: 'white' }
+                    }
+                },
+                scales

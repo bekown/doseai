@@ -1,0 +1,321 @@
+<!-- app/auth/templates/auth/profile.html -->
+{% extends "layout.html" %}
+
+{% block title %}My Profile - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Profile Header -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card center-align" style="padding: 20px; margin-top: 20px;">
+                <div class="row">
+                    <div class="col s12 m3">
+                        <div class="profile-avatar">
+                            <i class="material-icons large white-text">person</i>
+                        </div>
+                    </div>
+                    <div class="col s12 m9 left-align">
+                        <h4 class="white-text">
+                            {% if current_user.profile.first_name %}
+                                {{ current_user.profile.first_name }} {{ current_user.profile.last_name }}
+                            {% else %}
+                                {{ current_user.username }}
+                            {% endif %}
+                        </h4>
+                        <p class="grey-text text-lighten-2">
+                            <i class="material-icons tiny">email</i> {{ current_user.email }}
+                        </p>
+                        {% if current_user.profile.phone %}
+                        <p class="grey-text text-lighten-2">
+                            <i class="material-icons tiny">phone</i> {{ current_user.profile.phone }}
+                        </p>
+                        {% endif %}
+                        <p class="grey-text text-lighten-2">
+                            <i class="material-icons tiny">calendar_today</i> Member since {{ current_user.created_at.strftime('%B %Y') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Form -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h4>Edit Profile</h4>
+                        <p class="grey-text text-lighten-2">Update your personal information</p>
+                    </span>
+                    
+                    <form method="POST" action="{{ url_for('auth.profile') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Personal Information -->
+                        <div class="row">
+                            <h5 class="cyan-text text-lighten-3">Personal Information</h5>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">person</i>
+                                {{ form.first_name(class="white-text", id="first_name") }}
+                                <label for="first_name">First Name</label>
+                                {% for error in form.first_name.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">person</i>
+                                {{ form.last_name(class="white-text", id="last_name") }}
+                                <label for="last_name">Last Name</label>
+                                {% for error in form.last_name.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">phone</i>
+                                {{ form.phone(class="white-text", id="phone") }}
+                                <label for="phone">Phone Number</label>
+                                {% for error in form.phone.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">cake</i>
+                                {% if form.date_of_birth.data %}
+                                    {{ form.date_of_birth(class="white-text datepicker", id="date_of_birth", value=form.date_of_birth.data.strftime('%Y-%m-%d')) }}
+                                {% else %}
+                                    {{ form.date_of_birth(class="white-text datepicker", id="date_of_birth") }}
+                                {% endif %}
+                                <label for="date_of_birth">Date of Birth</label>
+                                {% for error in form.date_of_birth.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">wc</i>
+                                {{ form.gender(class="white-text", id="gender") }}
+                                <label for="gender">Gender</label>
+                                {% for error in form.gender.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">bloodtype</i>
+                                {{ form.blood_type(class="white-text", id="blood_type") }}
+                                <label for="blood_type">Blood Type</label>
+                                {% for error in form.blood_type.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Physical Metrics -->
+                        <div class="row">
+                            <h5 class="cyan-text text-lighten-3">Physical Metrics</h5>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">straighten</i>
+                                {{ form.height_cm(class="white-text", id="height_cm") }}
+                                <label for="height_cm">Height (cm)</label>
+                                {% for error in form.height_cm.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">fitness_center</i>
+                                {{ form.weight_kg(class="white-text", id="weight_kg") }}
+                                <label for="weight_kg">Weight (kg)</label>
+                                {% for error in form.weight_kg.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            {% if current_user.profile.bmi %}
+                            <div class="col s12">
+                                <div class="glass-card" style="padding: 15px; margin: 10px 0;">
+                                    <h6 class="cyan-text text-lighten-3">Health Metrics:</h6>
+                                    <div class="row">
+                                        <div class="col s6 m3">
+                                            <p class="center-align white-text">
+                                                <span class="large-text">{{ current_user.profile.bmi }}</span><br>
+                                                <small class="grey-text">BMI</small>
+                                            </p>
+                                        </div>
+                                        <div class="col s6 m3">
+                                            <p class="center-align white-text">
+                                                <span class="large-text">
+                                                    {% if current_user.profile.age %}
+                                                        {{ current_user.profile.age }}
+                                                    {% else %}
+                                                        --
+                                                    {% endif %}
+                                                </span><br>
+                                                <small class="grey-text">Age</small>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Address Information -->
+                        <div class="row">
+                            <h5 class="cyan-text text-lighten-3">Address</h5>
+                            
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">home</i>
+                                {{ form.address_line1(class="white-text", id="address_line1") }}
+                                <label for="address_line1">Address Line 1</label>
+                                {% for error in form.address_line1.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">home</i>
+                                {{ form.address_line2(class="white-text", id="address_line2") }}
+                                <label for="address_line2">Address Line 2 (Optional)</label>
+                                {% for error in form.address_line2.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">location_city</i>
+                                {{ form.city(class="white-text", id="city") }}
+                                <label for="city">City</label>
+                                {% for error in form.city.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m3">
+                                <i class="material-icons prefix">location_on</i>
+                                {{ form.state(class="white-text", id="state") }}
+                                <label for="state">State</label>
+                                {% for error in form.state.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="input-field col s12 m3">
+                                <i class="material-icons prefix">markunread_mailbox</i>
+                                {{ form.zip_code(class="white-text", id="zip_code") }}
+                                <label for="zip_code">Zip Code</label>
+                                {% for error in form.zip_code.errors %}
+                                <span class="helper-text red-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="center-align" style="margin-top: 30px;">
+                                    <button type="submit" class="btn waves-effect waves-light cyan darken-2">
+                                        <i class="material-icons left">save</i> Update Profile
+                                    </button>
+                                    
+                                    <a href="{{ url_for('auth.change_password') }}" class="btn waves-effect waves-light deep-purple lighten-2" style="margin-left: 10px;">
+                                        <i class="material-icons left">lock</i> Change Password
+                                    </a>
+                                    
+                                    <a href="{{ url_for('dashboard.index') }}" class="btn waves-effect waves-light grey" style="margin-left: 10px;">
+                                        <i class="material-icons left">close</i> Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(0, 188, 212, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    
+    .large-text {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    
+    .input-field input:focus + label,
+    .input-field textarea:focus + label {
+        color: #80deea !important;
+    }
+    
+    .input-field input:focus,
+    .input-field textarea:focus {
+        border-bottom: 1px solid #80deea !important;
+        box-shadow: 0 1px 0 0 #80deea !important;
+    }
+    
+    .datepicker {
+        color: white !important;
+    }
+    
+    .datepicker-date-display {
+        background-color: #00acc1 !important;
+    }
+    
+    .datepicker-table td.is-selected {
+        background-color: #00acc1 !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date picker
+        var datepickers = document.querySelectorAll('.datepicker');
+        M.Datepicker.init(datepickers, {
+            format: 'yyyy-mm-dd',
+            yearRange: [1900, new Date().getFullYear()],
+            autoClose: true,
+            showClearBtn: true,
+            i18n: {
+                cancel: 'Cancel',
+                clear: 'Clear',
+                done: 'OK',
+                months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                weekdaysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                weekdaysAbbrev: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+            }
+        });
+        
+        // Initialize character counters
+        var characterCounters = document.querySelectorAll('.character-counter');
+        M.CharacterCounter.init(characterCounters);
+    });
+</script>
+{% endblock %}

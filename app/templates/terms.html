@@ -1,0 +1,42 @@
+<!-- templates/terms.html -->
+{% extends "layout.html" %}
+
+{% block title %}Terms of Service - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h3 class="white-text">Terms of Service</h3>
+            <div class="glass-card" style="padding: 30px; margin-top: 20px;">
+                <h4 class="white-text">Agreement to Terms</h4>
+                <p class="grey-text text-lighten-2">
+                    By accessing and using DoseAI, you accept and agree to be bound by the terms and provision of this agreement.
+                </p>
+                
+                <h5 class="white-text" style="margin-top: 30px;">Medical Disclaimer</h5>
+                <p class="grey-text text-lighten-2">
+                    DoseAI is not a medical service provider. The information provided by DoseAI is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment.
+                </p>
+                
+                <h5 class="white-text" style="margin-top: 30px;">User Responsibilities</h5>
+                <ul class="browser-default grey-text text-lighten-2">
+                    <li>Provide accurate and complete information</li>
+                    <li>Keep your login credentials secure</li>
+                    <li>Use the service in compliance with all applicable laws</li>
+                    <li>Consult with healthcare professionals for medical decisions</li>
+                </ul>
+                
+                <h5 class="white-text" style="margin-top: 30px;">Service Availability</h5>
+                <p class="grey-text text-lighten-2">
+                    We strive to maintain 24/7 availability but cannot guarantee uninterrupted service. We may perform maintenance that could temporarily interrupt service.
+                </p>
+                
+                <div class="center-align" style="margin-top: 40px;">
+                    <a href="{{ url_for('main.home') }}" class="btn-flat white-text">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

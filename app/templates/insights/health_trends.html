@@ -1,0 +1,855 @@
+<!-- templates/insights/health_trends.html -->
+{% extends "insights/base_insights.html" %}
+
+{% block insights_content %}
+<!-- Header Section -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="row valign-wrapper">
+                <div class="col s8">
+                    <h4 class="white-text">
+                        <i class="material-icons left">monitor_heart</i>Health Trends
+                    </h4>
+                    <p class="grey-text text-lighten-2">
+                        Track your vital signs and health patterns over time
+                    </p>
+                </div>
+                <div class="col s4">
+                    <form method="GET" class="right-align">
+                        <div class="input-field">
+                            <select name="days" onchange="this.form.submit()">
+                                <option value="7" {% if days==7 %}selected{% endif %}>Last 7 days</option>
+                                <option value="30" {% if days==30 %}selected{% endif %}>Last 30 days</option>
+                                <option value="90" {% if days==90 %}selected{% endif %}>Last 90 days</option>
+                                <option value="180" {% if days==180 %}selected{% endif %}>Last 6 months</option>
+                            </select>
+                            <label>Time Period</label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vital Signs Dashboard -->
+<div class="row">
+    <!-- Blood Pressure -->
+    <div class="col s12 m6 l4">
+        <div class="glass-card vital-card">
+            <div class="vital-header">
+                <div class="vital-title">
+                    <i class="material-icons red-text">favorite</i>
+                    <h6 class="white-text">Blood Pressure</h6>
+                </div>
+                {% if bp_dates %}
+                <span class="vital-status {{ 'green-text' if latest_bp_category == 'normal' else 'yellow-text' if latest_bp_category == 'elevated' else 'red-text' }}">
+                    {{ latest_bp_category|title if latest_bp_category else 'N/A' }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="vital-content">
+                {% if bp_dates %}
+                <div class="vital-current">
+                    <h3 class="white-text center-align">
+                        {{ bp_systolic[-1] if bp_systolic else '--' }}/{{ bp_diastolic[-1] if bp_diastolic else '--' }}
+                    </h3>
+                    <p class="grey-text text-lighten-2 center-align">mmHg</p>
+                </div>
+                
+                <div class="vital-trend">
+                    <div class="trend-label">
+                        <span class="white-text">Trend:</span>
+                        {% if bp_systolic|length > 1 %}
+                            {% set bp_change = bp_systolic[-1] - bp_systolic[-2] %}
+                            <span class="{{ 'green-text' if bp_change < 0 else 'red-text' if bp_change > 0 else 'yellow-text' }}">
+                                {{ "%.0f"|format(bp_change) }} mmHg
+                                <i class="material-icons tiny">
+                                    {{ 'arrow_downward' if bp_change < 0 else 'arrow_upward' if bp_change > 0 else 'remove' }}
+                                </i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-data center-align">
+                    <i class="material-icons large grey-text">favorite_border</i>
+                    <p class="white-text">No BP data</p>
+                    <p class="grey-text text-lighten-2">Record your blood pressure</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Heart Rate -->
+    <div class="col s12 m6 l4">
+        <div class="glass-card vital-card">
+            <div class="vital-header">
+                <div class="vital-title">
+                    <i class="material-icons pink-text">favorite</i>
+                    <h6 class="white-text">Heart Rate</h6>
+                </div>
+                {% if hr_dates %}
+                <span class="vital-status {{ 'green-text' if latest_hr >= 60 and latest_hr <= 100 else 'red-text' }}">
+                    {{ 'Normal' if latest_hr >= 60 and latest_hr <= 100 else 'Abnormal' }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="vital-content">
+                {% if hr_dates %}
+                <div class="vital-current">
+                    <h3 class="white-text center-align">
+                        {{ hr_values[-1] if hr_values else '--' }}
+                    </h3>
+                    <p class="grey-text text-lighten-2 center-align">BPM</p>
+                </div>
+                
+                <div class="vital-trend">
+                    <div class="trend-label">
+                        <span class="white-text">Trend:</span>
+                        {% if hr_values|length > 1 %}
+                            {% set hr_change = hr_values[-1] - hr_values[-2] %}
+                            <span class="{{ 'green-text' if hr_change < 0 else 'red-text' if hr_change > 0 else 'yellow-text' }}">
+                                {{ "%.0f"|format(hr_change) }} BPM
+                                <i class="material-icons tiny">
+                                    {{ 'arrow_downward' if hr_change < 0 else 'arrow_upward' if hr_change > 0 else 'remove' }}
+                                </i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-data center-align">
+                    <i class="material-icons large grey-text">favorite_border</i>
+                    <p class="white-text">No HR data</p>
+                    <p class="grey-text text-lighten-2">Record your heart rate</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Temperature -->
+    <div class="col s12 m6 l4">
+        <div class="glass-card vital-card">
+            <div class="vital-header">
+                <div class="vital-title">
+                    <i class="material-icons orange-text">thermostat</i>
+                    <h6 class="white-text">Temperature</h6>
+                </div>
+                {% if temp_dates %}
+                <span class="vital-status {{ 'green-text' if latest_temp >= 36.5 and latest_temp <= 37.5 else 'red-text' }}">
+                    {{ 'Normal' if latest_temp >= 36.5 and latest_temp <= 37.5 else 'Abnormal' }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="vital-content">
+                {% if temp_dates %}
+                <div class="vital-current">
+                    <h3 class="white-text center-align">
+                        {{ "%.1f"|format(temp_values[-1]) if temp_values else '--' }}
+                    </h3>
+                    <p class="grey-text text-lighten-2 center-align">°C</p>
+                </div>
+                
+                <div class="vital-trend">
+                    <div class="trend-label">
+                        <span class="white-text">Trend:</span>
+                        {% if temp_values|length > 1 %}
+                            {% set temp_change = temp_values[-1] - temp_values[-2] %}
+                            <span class="{{ 'green-text' if temp_change < 0 else 'red-text' if temp_change > 0 else 'yellow-text' }}">
+                                {{ "%.1f"|format(temp_change) }}°C
+                                <i class="material-icons tiny">
+                                    {{ 'arrow_downward' if temp_change < 0 else 'arrow_upward' if temp_change > 0 else 'remove' }}
+                                </i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-data center-align">
+                    <i class="material-icons large grey-text">thermostat</i>
+                    <p class="white-text">No temp data</p>
+                    <p class="grey-text text-lighten-2">Record your temperature</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vital Trends Chart Area -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">show_chart</i>Vital Signs Timeline
+                </h5>
+                <div class="vital-selector">
+                    <a class="btn-flat white-text active" data-vital="bp">BP</a>
+                    <a class="btn-flat white-text" data-vital="hr">Heart Rate</a>
+                    <a class="btn-flat white-text" data-vital="temp">Temperature</a>
+                </div>
+            </div>
+            <div class="card-content">
+                <div id="vital-chart-container">
+                    <!-- Chart will be rendered here -->
+                    <div class="chart-placeholder">
+                        <canvas id="vital-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Symptom Analysis -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">healing</i>Symptom Analysis
+                </h5>
+                <span class="badge deep-orange lighten-1">{{ symptom_dates|length }} days</span>
+            </div>
+            <div class="card-content">
+                {% if symptom_dates %}
+                <div class="row">
+                    <div class="col s12 m6">
+                        <div class="symptom-summary">
+                            <div class="summary-item">
+                                <div class="summary-label white-text">Total Symptoms</div>
+                                <div class="summary-value white-text">{{ symptom_counts|sum }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label white-text">Daily Average</div>
+                                <div class="summary-value white-text">
+                                    {{ (symptom_counts|sum / symptom_dates|length)|round(1) if symptom_dates|length > 0 else 0 }}
+                                </div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label white-text">Avg Severity</div>
+                                <div class="summary-value {{ 'green-text' if symptom_severity_avg[-1] <= 1 else 'yellow-text' if symptom_severity_avg[-1] <= 2 else 'red-text' }}">
+                                    {{ symptom_severity_avg[-1]|round(1) if symptom_severity_avg else '0.0' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col s12 m6">
+                        <div class="symptom-timeline">
+                            <h6 class="white-text">Recent Symptoms</h6>
+                            <div class="symptom-bubbles">
+                                {% for date, count, severity in zip(symptom_dates[-5:], symptom_counts[-5:], symptom_severity_avg[-5:]) %}
+                                <div class="symptom-bubble {{ 'mild' if severity <= 1 else 'moderate' if severity <= 2 else 'severe' }}">
+                                    <div class="bubble-date white-text">{{ date[-5:] }}</div>
+                                    <div class="bubble-count white-text">{{ count }}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="symptom-heatmap">
+                    <h6 class="white-text">Symptom Patterns</h6>
+                    <div class="heatmap-grid">
+                        {% for date, count in zip(symptom_dates, symptom_counts) %}
+                        <div class="heatmap-cell {{ 'none' if count == 0 else 'low' if count <= 2 else 'medium' if count <= 5 else 'high' }}"
+                             title="{{ date }}: {{ count }} symptoms">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="center-align" style="padding: 40px 0;">
+                    <i class="material-icons large green-text">mood</i>
+                    <p class="white-text">No symptom data recorded</p>
+                    <p class="grey-text text-lighten-2">Track symptoms for better insights</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mood & Wellness Tracking -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">sentiment_satisfied</i>Mood & Wellness Trends
+                </h5>
+                <span class="badge cyan lighten-1">{{ mood_dates|length }} days</span>
+            </div>
+            <div class="card-content">
+                {% if mood_dates %}
+                <div class="mood-tracking">
+                    <div class="mood-metrics">
+                        <div class="mood-metric">
+                            <div class="metric-label white-text">Average Mood</div>
+                            <div class="metric-value {{ 'green-text' if mood_values[-1] >= 4 else 'yellow-text' if mood_values[-1] >= 3 else 'red-text' }}">
+                                {{ mood_values[-1]|round(1) if mood_values else 'N/A' }}/5
+                            </div>
+                        </div>
+                        <div class="mood-metric">
+                            <div class="metric-label white-text">Energy Level</div>
+                            <div class="metric-value {{ 'green-text' if energy_values[-1] >= 7 else 'yellow-text' if energy_values[-1] >= 5 else 'red-text' }}">
+                                {{ energy_values[-1]|round(1) if energy_values else 'N/A' }}/10
+                            </div>
+                        </div>
+                        <div class="mood-metric">
+                            <div class="metric-label white-text">Stress Level</div>
+                            <div class="metric-value {{ 'green-text' if stress_values[-1] <= 3 else 'yellow-text' if stress_values[-1] <= 5 else 'red-text' }}">
+                                {{ stress_values[-1]|round(1) if stress_values else 'N/A' }}/10
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mood-chart">
+                        <canvas id="mood-chart" width="400" height="150"></canvas>
+                    </div>
+                </div>
+                {% else %}
+                <div class="center-align" style="padding: 40px 0;">
+                    <i class="material-icons large cyan-text">mood</i>
+                    <p class="white-text">No mood data recorded</p>
+                    <p class="grey-text text-lighten-2">Track your daily mood for insights</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Correlations & Insights -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">insights</i>Health Correlations
+                </h5>
+                <span class="badge purple lighten-1">AI Analysis</span>
+            </div>
+            <div class="card-content">
+                {% if correlations %}
+                <div class="correlations-grid">
+                    {% for correlation in correlations %}
+                    <div class="correlation-card glass-card-inner">
+                        <div class="correlation-header">
+                            <h6 class="white-text">{{ correlation.type }}</h6>
+                            <span class="correlation-value {{ 'green-text' if correlation.correlation|abs < 0.3 else 'yellow-text' if correlation.correlation|abs < 0.7 else 'red-text' }}">
+                                {{ "%.2f"|format(correlation.correlation) }}
+                            </span>
+                        </div>
+                        <p class="grey-text text-lighten-2">{{ correlation.interpretation }}</p>
+                        <div class="correlation-strength">
+                            <div class="strength-bar">
+                                <div class="strength-fill" style="width: {{ correlation.correlation|abs * 100 }}%;"></div>
+                            </div>
+                            <span class="strength-label white-text">
+                                {{ 'Weak' if correlation.correlation|abs < 0.3 else 'Moderate' if correlation.correlation|abs < 0.7 else 'Strong' }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="center-align" style="padding: 40px 0;">
+                    <i class="material-icons large purple-text">insights</i>
+                    <p class="white-text">Analyzing correlations...</p>
+                    <p class="grey-text text-lighten-2">More data needed for analysis</p>
+                </div>
+                {% endif %}
+                
+                <div class="health-insights">
+                    <h6 class="white-text">Health Insights</h6>
+                    <ul class="collection glass-collection">
+                        <li class="collection-item glass-collection-item">
+                            <i class="material-icons blue-text left">info</i>
+                            <span class="white-text">Consistent vital tracking helps identify patterns</span>
+                        </li>
+                        <li class="collection-item glass-collection-item">
+                            <i class="material-icons blue-text left">info</i>
+                            <span class="white-text">Mood and symptom tracking can reveal connections</span>
+                        </li>
+                        <li class="collection-item glass-collection-item">
+                            <i class="material-icons blue-text left">info</i>
+                            <span class="white-text">Regular monitoring enables early detection</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+.vital-card {
+    padding: 20px;
+    border-radius: 20px;
+    transition: transform 0.3s ease;
+}
+
+.vital-card:hover {
+    transform: translateY(-5px);
+}
+
+.vital-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.vital-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vital-status {
+    font-weight: bold;
+}
+
+.vital-current {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.vital-trend {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.trend-label {
+    display: flex;
+    justify-content: space-between;
+}
+
+.no-data {
+    padding: 40px 20px;
+}
+
+.vital-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.vital-selector .btn-flat.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+}
+
+.chart-placeholder {
+    padding: 20px;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.symptom-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.symptom-timeline {
+    padding: 20px;
+}
+
+.symptom-bubbles {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    justify-content: center;
+}
+
+.symptom-bubble {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.symptom-bubble.mild {
+    background: rgba(76, 175, 80, 0.3);
+    border: 2px solid #4CAF50;
+}
+
+.symptom-bubble.moderate {
+    background: rgba(255, 152, 0, 0.3);
+    border: 2px solid #FF9800;
+}
+
+.symptom-bubble.severe {
+    background: rgba(244, 67, 54, 0.3);
+    border: 2px solid #F44336;
+}
+
+.bubble-date {
+    font-size: 10px;
+}
+
+.bubble-count {
+    font-weight: bold;
+}
+
+.symptom-heatmap {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+    gap: 5px;
+    margin-top: 15px;
+}
+
+.heatmap-cell {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    transition: transform 0.3s ease;
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.5);
+}
+
+.heatmap-cell.none {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.heatmap-cell.low {
+    background: rgba(76, 175, 80, 0.5);
+}
+
+.heatmap-cell.medium {
+    background: rgba(255, 152, 0, 0.5);
+}
+
+.heatmap-cell.high {
+    background: rgba(244, 67, 54, 0.5);
+}
+
+.mood-tracking {
+    padding: 20px 0;
+}
+
+.mood-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.mood-metric {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    text-align: center;
+}
+
+.metric-label {
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.metric-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.mood-chart {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.correlations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.correlation-card {
+    padding: 20px;
+    border-radius: 15px;
+}
+
+.correlation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.correlation-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.correlation-strength {
+    margin-top: 15px;
+}
+
+.strength-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-bottom: 5px;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4CAF50, #FF9800, #F44336);
+    border-radius: 4px;
+}
+
+.strength-label {
+    font-size: 12px;
+    text-align: right;
+}
+
+.health-insights {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .vital-selector {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .mood-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .correlations-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize select
+    var selectElems = document.querySelectorAll('select');
+    M.FormSelect.init(selectElems);
+    
+    // Vital chart data
+    const vitalData = {
+        bp: {
+            labels: {{ bp_dates|tojson|safe }},
+            datasets: [{
+                label: 'Systolic',
+                data: {{ bp_systolic|tojson|safe }},
+                borderColor: '#F44336',
+                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                tension: 0.3
+            }, {
+                label: 'Diastolic',
+                data: {{ bp_diastolic|tojson|safe }},
+                borderColor: '#FF9800',
+                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                tension: 0.3
+            }]
+        },
+        hr: {
+            labels: {{ hr_dates|tojson|safe }},
+            datasets: [{
+                label: 'Heart Rate',
+                data: {{ hr_values|tojson|safe }},
+                borderColor: '#E91E63',
+                backgroundColor: 'rgba(233, 30, 99, 0.1)',
+                tension: 0.3
+            }]
+        },
+        temp: {
+            labels: {{ temp_dates|tojson|safe }},
+            datasets: [{
+                label: 'Temperature',
+                data: {{ temp_values|tojson|safe }},
+                borderColor: '#FF9800',
+                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                tension: 0.3
+            }]
+        }
+    };
+    
+    // Create vital chart
+    const vitalCtx = document.getElementById('vital-chart').getContext('2d');
+    let vitalChart = new Chart(vitalCtx, {
+        type: 'line',
+        data: vitalData.bp,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#B0BEC5'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: '#B0BEC5'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Vital selector functionality
+    const vitalSelectors = document.querySelectorAll('.vital-selector .btn-flat');
+    vitalSelectors.forEach(selector => {
+        selector.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all
+            vitalSelectors.forEach(s => s.classList.remove('active'));
+            
+            // Add active class to clicked
+            this.classList.add('active');
+            
+            // Update chart
+            const vitalType = this.dataset.vital;
+            vitalChart.data = vitalData[vitalType];
+            vitalChart.update();
+        });
+    });
+    
+    // Create mood chart
+    const moodCtx = document.getElementById('mood-chart').getContext('2d');
+    new Chart(moodCtx, {
+        type: 'line',
+        data: {
+            labels: {{ mood_dates|tojson|safe }},
+            datasets: [{
+                label: 'Mood',
+                data: {{ mood_values|tojson|safe }},
+                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                tension: 0.3,
+                yAxisID: 'y'
+            }, {
+                label: 'Energy',
+                data: {{ energy_values|tojson|safe }},
+                borderColor: '#2196F3',
+                backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                tension: 0.3,
+                yAxisID: 'y1'
+            }, {
+                label: 'Stress',
+                data: {{ stress_values|tojson|safe }},
+                borderColor: '#F44336',
+                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                tension: 0.3,
+                yAxisID: 'y'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#B0BEC5'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    ticks: {
+                        color: '#B0BEC5'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    ticks: {
+                        color: '#B0BEC5'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+    
+    // Add hover effects to correlation cards
+    const correlationCards = document.querySelectorAll('.correlation-card');
+    correlationCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

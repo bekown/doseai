@@ -1,0 +1,1020 @@
+<!-- templates/insights/printable_report.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Report - DoseAI</title>
+    <style>
+        /* Printable report styling */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fff;
+            padding: 20px;
+            max-width: 210mm; /* A4 width */
+            margin: 0 auto;
+        }
+        
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #03a9f4;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            color: #03a9f4;
+            font-size: 36px;
+        }
+        
+        .logo-text h1 {
+            color: #03a9f4;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .logo-text p {
+            color: #666;
+            font-size: 12px;
+            margin: 0;
+        }
+        
+        .report-meta {
+            text-align: right;
+        }
+        
+        .report-meta .date {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .report-meta .confidential {
+            background: #03a9f4;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        .patient-info {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .patient-info h2 {
+            color: #03a9f4;
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #03a9f4;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            color: #03a9f4;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            font-size: 20px;
+        }
+        
+        .section-date {
+            color: #666;
+            font-size: 12px;
+            font-style: italic;
+        }
+        
+        .summary-box {
+            background: #f8fdff;
+            border: 1px solid #e1f5fe;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .summary-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .summary-value.good {
+            color: #4CAF50;
+        }
+        
+        .summary-value.fair {
+            color: #FF9800;
+        }
+        
+        .summary-value.poor {
+            color: #F44336;
+        }
+        
+        .summary-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .medication-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .medication-table th {
+            background: #03a9f4;
+            color: white;
+            text-align: left;
+            padding: 12px 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .medication-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        
+        .medication-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .status-badge {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .status-badge.active {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .status-badge.inactive {
+            background: #9E9E9E;
+            color: white;
+        }
+        
+        .vital-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .vital-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .vital-value {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 10px 0;
+            color: #333;
+        }
+        
+        .vital-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .vital-normal {
+            color: #4CAF50;
+        }
+        
+        .vital-warning {
+            color: #FF9800;
+        }
+        
+        .vital-alert {
+            color: #F44336;
+        }
+        
+        .condition-list {
+            list-style: none;
+        }
+        
+        .condition-item {
+            padding: 15px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .condition-info h4 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .condition-meta {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .condition-status {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .condition-status.active {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .condition-status.resolved {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .lab-test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .lab-test-table th {
+            background: #673AB7;
+            color: white;
+            text-align: left;
+            padding: 12px 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .lab-test-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        
+        .result-normal {
+            color: #4CAF50;
+            font-weight: 500;
+        }
+        
+        .result-abnormal {
+            color: #F44336;
+            font-weight: 500;
+        }
+        
+        .insights-box {
+            background: #f3e5f5;
+            border: 1px solid #E1BEE7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .insights-box h4 {
+            color: #7B1FA2;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .insight-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #E1BEE7;
+        }
+        
+        .insight-item:last-child {
+            border-bottom: none;
+        }
+        
+        .insight-item p {
+            color: #333;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .insight-priority {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-right: 10px;
+        }
+        
+        .priority-high {
+            background: #F44336;
+            color: white;
+        }
+        
+        .priority-medium {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .priority-low {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #03a9f4;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+        }
+        
+        .disclaimer {
+            font-size: 10px;
+            color: #999;
+            margin-top: 20px;
+            text-align: justify;
+            line-height: 1.4;
+        }
+        
+        /* Print-specific styles */
+        @media print {
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .page-break {
+                page-break-before: always;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+            
+            .summary-box,
+            .insights-box {
+                break-inside: avoid;
+            }
+            
+            .print-header {
+                position: fixed;
+                top: 0;
+                width: 100%;
+                background: white;
+                z-index: 1000;
+            }
+            
+            .content {
+                margin-top: 100px;
+            }
+        }
+        
+        /* Utility classes */
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+        
+        .mt-20 {
+            margin-top: 20px;
+        }
+        
+        .color-primary {
+            color: #03a9f4;
+        }
+        
+        .color-success {
+            color: #4CAF50;
+        }
+        
+        .color-warning {
+            color: #FF9800;
+        }
+        
+        .color-danger {
+            color: #F44336;
+        }
+        
+        .font-bold {
+            font-weight: 700;
+        }
+    </style>
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <div class="print-header">
+        <div class="logo">
+            <i class="material-icons logo-icon">medication</i>
+            <div class="logo-text">
+                <h1>DoseAI Health Report</h1>
+                <p>Personal Health Intelligence Platform</p>
+            </div>
+        </div>
+        <div class="report-meta">
+            <div class="date">Generated: {{ generated_date.strftime('%B %d, %Y at %I:%M %p') }}</div>
+            <div class="confidential">CONFIDENTIAL - PATIENT HEALTH INFORMATION</div>
+        </div>
+    </div>
+    
+    <!-- Patient Information -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="material-icons">person</i>
+                Patient Information
+            </h2>
+        </div>
+        <div class="patient-info">
+            <div class="info-grid">
+                <!-- Patient details would be populated from user profile -->
+                <div class="info-item">
+                    <span class="info-label">Patient Name</span>
+                    <span class="info-value">{{ current_user.profile.first_name }} {{ current_user.profile.last_name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date of Birth</span>
+                    <span class="info-value">
+                        {% if current_user.profile.date_of_birth %}
+                            {{ current_user.profile.date_of_birth.strftime('%B %d, %Y') }}
+                            (Age: {{ current_user.profile.age }})
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Gender</span>
+                    <span class="info-value">{{ current_user.profile.gender or 'Not specified' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Blood Type</span>
+                    <span class="info-value">{{ current_user.profile.blood_type or 'Not specified' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Report Period</span>
+                    <span class="info-value">Last 30 Days</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Report ID</span>
+                    <span class="info-value">HR-{{ generated_date.strftime('%Y%m%d') }}-{{ current_user.id }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Executive Summary -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="material-icons">assessment</i>
+                Executive Summary
+            </h2>
+        </div>
+        <div class="summary-box">
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-value {{ 'good' if adherence_rate >= 90 else 'fair' if adherence_rate >= 70 else 'poor' }}">
+                        {{ "%.1f"|format(adherence_rate) }}%
+                    </div>
+                    <div class="summary-label">Medication Adherence</div>
+                    <div class="summary-status">
+                        {% if adherence_rate >= 90 %}
+                        <span class="color-success">Excellent</span>
+                        {% elif adherence_rate >= 70 %}
+                        <span class="color-warning">Good</span>
+                        {% else %}
+                        <span class="color-danger">Needs Improvement</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value {{ 'good' if wellness_score.total_score >= 80 else 'fair' if wellness_score.total_score >= 60 else 'poor' }}">
+                        {{ wellness_score.total_score if wellness_score else 'N/A' }}
+                    </div>
+                    <div class="summary-label">Wellness Score</div>
+                    <div class="summary-status">
+                        {% if wellness_score %}
+                            {% if wellness_score.total_score >= 80 %}
+                            <span class="color-success">Optimal</span>
+                            {% elif wellness_score.total_score >= 60 %}
+                            <span class="color-warning">Satisfactory</span>
+                            {% else %}
+                            <span class="color-danger">Needs Attention</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="color-warning">Not Calculated</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">{{ medications|length }}</div>
+                    <div class="summary-label">Active Medications</div>
+                    <div class="summary-status">
+                        {% set low_adherence = medications|selectattr('adherence_rate', '<', 70)|list %}
+                        {% if low_adherence|length == 0 %}
+                        <span class="color-success">All On Track</span>
+                        {% else %}
+                        <span class="color-warning">{{ low_adherence|length }} Need Review</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">{{ conditions|length }}</div>
+                    <div class="summary-label">Active Conditions</div>
+                    <div class="summary-status">
+                        {% if conditions|length == 0 %}
+                        <span class="color-success">No Active Conditions</span>
+                        {% else %}
+                        <span class="color-primary">{{ conditions|length }} Being Managed</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="insights-box mt-20">
+                <h4>
+                    <i class="material-icons">lightbulb</i>
+                    Key Insights
+                </h4>
+                <div class="insight-item">
+                    <span class="insight-priority {{ 'priority-high' if adherence_rate < 70 else 'priority-low' }}">
+                        {{ 'High' if adherence_rate < 70 else 'Low' }}
+                    </span>
+                    <p>
+                        {% if adherence_rate >= 90 %}
+                        Medication adherence is excellent. Continue current regimen.
+                        {% elif adherence_rate >= 70 %}
+                        Medication adherence is good. Consider minor improvements.
+                        {% else %}
+                        Medication adherence needs improvement. Review reminders and scheduling.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="insight-item">
+                    <span class="insight-priority priority-medium">Medium</span>
+                    <p>
+                        Regular monitoring of vital signs and symptoms recommended.
+                    </p>
+                </div>
+                <div class="insight-item">
+                    <span class="insight-priority priority-low">Low</span>
+                    <p>
+                        Continue following up with healthcare providers as scheduled.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Medications -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="material-icons">medication</i>
+                Current Medications
+            </h2>
+            <div class="section-date">As of {{ generated_date.strftime('%B %d, %Y') }}</div>
+        </div>
+        
+        {% if medications %}
+        <table class="medication-table">
+            <thead>
+                <tr>
+                    <th>Medication</th>
+                    <th>Strength</th>
+                    <th>Form</th>
+                    <th>Schedule</th>
+                    <th>Adherence</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for medication in medications %}
+                {% set prescription = medication.active_prescription %}
+                <tr>
+                    <td class="font-bold">{{ medication.name }}</td>
+                    <td>{{ medication.strength or 'N/A' }}</td>
+                    <td>{{ medication.form or 'N/A' }}</td>
+                    <td>
+                        {% if prescription %}
+                            {{ prescription.frequency }}x per {{ prescription.frequency_unit }}
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set med_adherence = helper.calculate_medication_adherence(medication.id) %}
+                        <span class="{{ 'color-success' if med_adherence >= 90 else 'color-warning' if med_adherence >= 70 else 'color-danger' }}">
+                            {{ "%.1f"|format(med_adherence) }}%
+                        </span>
+                    </td>
+                    <td>
+                        {% if prescription and prescription.is_active %}
+                        <span class="status-badge active">Active</span>
+                        {% else %}
+                        <span class="status-badge inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center mb-20">
+            <p>No active medications recorded.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Health Conditions -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="material-icons">healing</i>
+                Health Conditions
+            </h2>
+        </div>
+        
+        {% if conditions %}
+        <div class="condition-list">
+            {% for condition in conditions %}
+            <div class="condition-item">
+                <div class="condition-info">
+                    <h4>{{ condition.name }}</h4>
+                    <div class="condition-meta">
+                        {% if condition.type %}{{ condition.type|title }} • {% endif %}
+                        {% if condition.diagnosis_date %}Diagnosed: {{ condition.diagnosis_date.strftime('%B %Y') }} • {% endif %}
+                        Severity: {{ condition.severity|title if condition.severity else 'Not specified' }}
+                    </div>
+                </div>
+                <div class="condition-status {{ condition.status }}">
+                    {{ condition.status|title }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center mb-20">
+            <p>No active health conditions recorded.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Allergies -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="material-icons">warning</i>
+                Allergies
+            </h2>
+        </div>
+        
+        {% if allergies %}
+        <div class="condition-list">
+            {% for allergy in allergies %}
+            <div class="condition-item">
+                <div class="condition-info">
+                    <h4>{{ allergy.allergen_name }}</h4>
+                    <div class="condition-meta">
+                        Type: {{ allergy.type|title if allergy.type else 'Not specified' }} •
+                        Reaction: {{ allergy.reaction if allergy.reaction else 'Not specified' }} •
+                        Severity: {{ allergy.severity|title if allergy.severity else 'Not specified' }}
+                    </div>
+                </div>
+                <div class="condition-status {{ allergy.status }}">
+                    {{ allergy.status|title }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center mb-20">
+            <p>No allergies recorded.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Vital Signs -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="material-icons">monitor_heart</i>
+                Recent Vital Signs
+            </h2>
+            <div class="section-date">Last 10 readings</div>
+        </div>
+        
+        {% if vitals %}
+        <div class="vital-grid">
+            {% for vital in vitals[:10] %}
+            <div class="vital-card">
+                <div class="vital-label">Blood Pressure</div>
+                <div class="vital-value {{ 'vital-normal' if vital.bp_category == 'normal' else 'vital-warning' if vital.bp_category in ['elevated', 'stage1'] else 'vital-alert' }}">
+                    {{ vital.systolic_bp }}/{{ vital.diastolic_bp }}
+                </div>
+                <div class="vital-meta">
+                    {{ vital.recorded_at.strftime('%m/%d') }}
+                    {% if vital.bp_category %}
+                    <br><small>{{ vital.bp_category|title }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Additional vitals -->
+        <div class="vital-grid mt-20">
+            {% for vital in vitals[:5] %}
+            <div class="vital-card">
+                <div class="vital-label">Heart Rate</div>
+                <div class="vital-value {{ 'vital-normal' if vital.heart_rate and 60 <= vital.heart_rate <= 100 else 'vital-alert' }}">
+                    {{ vital.heart_rate or '--' }}
+                </div>
+                <div class="vital-meta">
+                    {{ vital.recorded_at.strftime('%m/%d') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center mb-20">
+            <p>No vital signs recorded.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Lab Results -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="material-icons">science</i>
+                Recent Lab Results
+            </h2>
+        </div>
+        
+        {% if lab_tests %}
+        <table class="lab-test-table">
+            <thead>
+                <tr>
+                    <th>Test Name</th>
+                    <th>Date</th>
+                    <th>Result</th>
+                    <th>Reference Range</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in lab_tests %}
+                <tr>
+                    <td>{{ test.test_name }}</td>
+                    <td>{{ test.test_date.strftime('%Y-%m-%d') if test.test_date else 'N/A' }}</td>
+                    <td>{{ test.result_value }} {{ test.result_unit }}</td>
+                    <td>{{ test.reference_range or 'N/A' }}</td>
+                    <td>
+                        <span class="{{ 'result-normal' if test.result_status == 'normal' else 'result-abnormal' }}">
+                            {{ test.result_status|title if test.result_status else 'N/A' }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center mb-20">
+            <p>No lab test results recorded.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Recommendations -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="material-icons">recommend</i>
+                Recommendations
+            </h2>
+        </div>
+        
+        <div class="insights-box">
+            <h4>
+                <i class="material-icons">medical_services</i>
+                Healthcare Provider Recommendations
+            </h4>
+            
+            <div class="insight-item">
+                <span class="insight-priority priority-high">High</span>
+                <p>
+                    {% if adherence_rate < 70 %}
+                    <strong>Improve Medication Adherence:</strong> Schedule regular reminders and consider weekly pill organizers.
+                    {% else %}
+                    <strong>Maintain Current Regimen:</strong> Continue taking medications as prescribed.
+                    {% endif %}
+                </p>
+            </div>
+            
+            <div class="insight-item">
+                <span class="insight-priority priority-medium">Medium</span>
+                <p>
+                    <strong>Regular Monitoring:</strong> Continue tracking vital signs and symptoms weekly.
+                </p>
+            </div>
+            
+            <div class="insight-item">
+                <span class="insight-priority priority-low">Low</span>
+                <p>
+                    <strong>Preventive Care:</strong> Schedule annual physical and routine screenings.
+                </p>
+            </div>
+            
+            {% if wellness_score and wellness_score.recommendations %}
+                {% for recommendation in wellness_score.recommendations[:3] %}
+                <div class="insight-item">
+                    <span class="insight-priority priority-medium">Medium</span>
+                    <p>{{ recommendation }}</p>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>DoseAI Health Report</strong> - Generated electronically</p>
+        <p>Report ID: HR-{{ generated_date.strftime('%Y%m%d') }}-{{ current_user.id }}</p>
+        <p>Generated: {{ generated_date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+        
+        <div class="disclaimer">
+            <p>
+                <strong>Disclaimer:</strong> This report is generated from patient-entered data and is intended for informational purposes only. 
+                It should not be considered a substitute for professional medical advice, diagnosis, or treatment. 
+                Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
+                Data accuracy depends on patient input and may not reflect complete medical history.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Print Button (hidden in print) -->
+    <div class="no-print text-center mt-20">
+        <button onclick="window.print()" class="btn" style="
+            background: #03a9f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        ">
+            <i class="material-icons">print</i>
+            Print Report
+        </button>
+        <button onclick="window.close()" class="btn" style="
+            background: #666;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        ">
+            <i class="material-icons">close</i>
+            Close Window
+        </button>
+    </div>
+    
+    <script>
+        // Auto-print on load (optional)
+        window.onload = function() {
+            // Uncomment to auto-print
+            // setTimeout(function() { window.print(); }, 1000);
+        };
+        
+        // Add page breaks for better printing
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach((section, index) => {
+                if (index > 0 && index % 2 === 0) {
+                    section.classList.add('page-break');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

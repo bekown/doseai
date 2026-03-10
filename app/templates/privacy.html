@@ -1,0 +1,46 @@
+<!-- templates/privacy.html -->
+{% extends "layout.html" %}
+
+{% block title %}Privacy Policy - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h3 class="white-text">Privacy Policy</h3>
+            <div class="glass-card" style="padding: 30px; margin-top: 20px;">
+                <h4 class="white-text">Our Commitment to Your Privacy</h4>
+                <p class="grey-text text-lighten-2">
+                    At DoseAI, we take your privacy seriously. This privacy policy describes how we collect, use, and protect your personal information.
+                </p>
+                
+                <h5 class="white-text" style="margin-top: 30px;">Information We Collect</h5>
+                <ul class="browser-default grey-text text-lighten-2">
+                    <li>Personal identification information (name, email address, phone number)</li>
+                    <li>Health and medication information</li>
+                    <li>Usage data and analytics</li>
+                    <li>Device information</li>
+                </ul>
+                
+                <h5 class="white-text" style="margin-top: 30px;">How We Use Your Information</h5>
+                <ul class="browser-default grey-text text-lighten-2">
+                    <li>To provide medication management services</li>
+                    <li>To send medication reminders and alerts</li>
+                    <li>To analyze drug interactions</li>
+                    <li>To improve our services</li>
+                    <li>To communicate with you about updates</li>
+                </ul>
+                
+                <h5 class="white-text" style="margin-top: 30px;">Data Security</h5>
+                <p class="grey-text text-lighten-2">
+                    We implement industry-standard security measures to protect your data, including encryption, secure servers, and regular security audits.
+                </p>
+                
+                <div class="center-align" style="margin-top: 40px;">
+                    <a href="{{ url_for('main.home') }}" class="btn-flat white-text">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

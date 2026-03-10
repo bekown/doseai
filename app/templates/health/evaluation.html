@@ -1,0 +1,503 @@
+<!-- app/health/templates/health/evaluations.html -->
+{% extends "layout.html" %}
+
+{% block title %}Medical Evaluations - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col s9">
+            <h4 class="white-text"><i class="material-icons left cyan-text text-lighten-3">medical_services</i>Medical Evaluations</h4>
+            <p class="grey-text text-lighten-2">Manage your medical visits and evaluations</p>
+        </div>
+        
+    </div>
+
+    <!-- Stats & Quick Actions -->
+    <div class="row">
+        <div class="col s12 m3">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <div class="large-text">{{ evaluations|length }}</div>
+                    <small class="grey-text">Total Evaluations</small>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m3">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <div class="large-text">{{ upcoming_evaluations|length }}</div>
+                    <small class="grey-text">Upcoming Follow-ups</small>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m6">
+            <div class="glass-card">
+                <div class="card-content white-text center-align">
+                    <h6 class="cyan-text text-lighten-3">Quick Actions</h6>
+                    <a class="btn cyan darken-2 waves-effect waves-light" style="margin: 5px;" href="#add-evaluation-modal">
+                        <i class="material-icons left">add</i> Add Evaluation
+                    </a>
+                    <a class="btn deep-purple lighten-2 waves-effect waves-light" style="margin: 5px;" href="{{ url_for('health.comprehensive_evaluation') }}">
+                        <i class="material-icons left">note_add</i> Comprehensive
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Follow-ups -->
+    {% if upcoming_evaluations %}
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h5><i class="material-icons left yellow-text text-lighten-2">notifications_active</i>Upcoming Follow-ups</h5>
+                    </span>
+                    
+                    <div class="row">
+                        {% for evaluation in upcoming_evaluations %}
+                        <div class="col s12 m6 l4">
+                            <div class="glass-card" style="padding: 15px; margin: 10px 0; background: rgba(255,255,255,0.05);">
+                                <div class="row" style="margin-bottom: 0;">
+                                    <div class="col s3 center-align">
+                                        <div class="date-box cyan darken-2 white-text" style="padding: 10px; border-radius: 5px;">
+                                            <div style="font-size: 1.5rem; font-weight: bold;">{{ evaluation.follow_up_date.day }}</div>
+                                            <div style="font-size: 0.8rem;">{{ evaluation.follow_up_date.strftime('%b') }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col s9">
+                                        <strong class="white-text">{{ evaluation.provider_name }}</strong>
+                                        <p class="grey-text text-lighten-2" style="margin: 5px 0; font-size: 0.9rem;">
+                                            {{ evaluation.clinic_name or 'Clinic' }}
+                                        </p>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Evaluations List -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h5>All Evaluations</h5>
+                    </span>
+                    
+                    {% if evaluations %}
+                    <table class="highlight responsive-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Provider</th>
+                                <th>Type</th>
+                                <th>Chief Complaint</th>
+                                <th>Follow-up</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for evaluation in evaluations %}
+                            <tr>
+                                <td>{{ evaluation.evaluation_date.strftime('%b %d, %Y') }}</td>
+                                <td>
+                                    <strong>{{ evaluation.provider_name }}</strong>
+                                    {% if evaluation.clinic_name %}
+                                    <br><small class="grey-text">{{ evaluation.clinic_name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge cyan lighten-2">
+                                        {{ evaluation.evaluation_type|replace('_', ' ')|title }}
+                                    </span>
+                                </td>
+                                <td>{{ evaluation.chief_complaint|truncate(50) }}</td>
+                                <td>
+                                    {% if evaluation.follow_up_date %}
+                                    <span class="badge {{ 'yellow' if evaluation.follow_up_date >= today else 'grey' }}">
+                                        {{ evaluation.follow_up_date.strftime('%b %d, %Y') }}
+                                    </span>
+                                    {% else %}
+                                    <span class="grey-text">None</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    
+                                    <button class="btn-flat cyan-text view-evaluation-btn" data-id="{{ evaluation.id }}">
+                                        <i class="material-icons">visibility</i>
+                                    </button>
+                                    <button class="btn-flat red-text delete-evaluation-btn" data-id="{{ evaluation.id }}">
+                                        <i class="material-icons">delete</i>
+                                    </button>
+
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="grey-text text-lighten-2 center-align">No evaluations recorded yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Hover Button For Add Evaluation -->
+<div class="fixed-action-btn">
+    <a href="#add-evaluation-modal" class="btn-floating btn-large cyan darken-2" id="add-evaluation-btn">
+        <i class="large material-icons">add</i>
+    </a>
+</div>
+
+<!-- Add Evaluation Modal -->
+<div id="add-evaluation-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4>Add Medical Evaluation</h4>
+        
+        <form id="evaluation-form" method="POST" action="{{ url_for('health.evaluations') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    {{ form.evaluation_date(class="white-text datepicker", id="evaluation_date") }}
+                    <label for="evaluation_date">Date of Visit</label>
+                </div>
+                <div class="input-field col s12 m6">
+                    {{ form.evaluation_type(class="white-text", id="evaluation_type") }}
+                    <label for="evaluation_type">Type of Visit</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.provider_name(class="white-text", id="provider_name") }}
+                    <label for="provider_name">Provider Name</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.clinic_name(class="white-text", id="clinic_name") }}
+                    <label for="clinic_name">Clinic/Hospital</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.chief_complaint(class="white-text", id="chief_complaint") }}
+                    <label for="chief_complaint">Chief Complaint/Reason for Visit</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.diagnosis(class="white-text materialize-textarea", id="diagnosis") }}
+                    <label for="diagnosis">Diagnosis</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.summary(class="white-text materialize-textarea", id="summary") }}
+                    <label for="summary">Visit Summary</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    {{ form.recommendations(class="white-text materialize-textarea", id="recommendations") }}
+                    <label for="recommendations">Recommendations</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    {{ form.follow_up_date(class="white-text datepicker", id="follow_up_date") }}
+                    <label for="follow_up_date">Follow-up Date</label>
+                </div>
+                <div class="input-field col s12 m6">
+                    {{ form.documents(class="white-text", id="documents") }}
+                    <label for="documents">Documents/Reports</label>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+                <button type="submit" class="btn cyan darken-2 waves-effect waves-light">
+                    <i class="material-icons left">save</i> Save Evaluation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Evaluation Detail Modal -->
+<div id="evaluation-detail-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4>Medical Evaluation Details</h4>
+        <div id="evaluation-detail-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Close</button>
+    </div>
+</div>
+
+<style>
+    .date-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .glass-card-modal {
+        background: rgba(30, 30, 46, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .badge {
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        color: white;
+    }
+    
+    table {
+        background: transparent !important;
+    }
+    
+    table th {
+        color: #80deea !important;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    table td {
+        color: white !important;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {        
+
+        
+        // Initialize datepickers
+        var datepickers = document.querySelectorAll('.datepicker');
+        M.Datepicker.init(datepickers, {
+            format: 'yyyy-mm-dd',
+            autoClose: true
+        });
+        
+        // Initialize tooltips
+        var tooltips = document.querySelectorAll('.tooltipped');
+        M.Tooltip.init(tooltips);
+        
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        // Add Evaluation Button
+        const addEvalModal = M.Modal.init(document.getElementById('add-evaluation-modal'));
+        document.getElementById('add-evaluation-btn').addEventListener('click', function() {
+            addEvalModal.open();
+        });
+        
+        // Save Evaluation
+        document.getElementById('evaluation-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/api/evaluations', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                M.toast({html: 'Evaluation saved successfully', classes: 'green rounded'});
+                //Close the modal
+                addEvalModal.close();
+                location.reload();
+            })
+            .catch(error => {
+                M.toast({html: 'Error saving evaluation', classes: 'red rounded'});
+            });
+        // Cancel Evaluation
+        });
+        document.getElementById('cancel-evaluation-btn').addEventListener('click', function() {
+            addEvalModal.close();
+            
+        });
+        // Initialize evaluation detail modal
+        const evalModal = M.Modal.init(document.getElementById('evaluation-detail-modal'));
+        // Delete Evaluation
+        document.querySelectorAll('.delete-evaluation-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const evalId = this.getAttribute('data-id');
+                
+                fetch(`/api/evaluations/${evalId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    M.toast({html: 'Evaluation deleted successfully', classes: 'green rounded'});
+                    location.reload();
+                })
+                .catch(error => {
+                    M.toast({html: 'Error deleting evaluation', classes: 'red rounded'});
+                });
+            });
+            
+        })
+        
+        // View Evaluation Details
+        document.querySelectorAll('.view-evaluation-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const evalId = this.getAttribute('data-id');
+                
+                fetch(`/api/evaluations/${evalId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderEvaluationDetail(data);
+                        evalModal.open();
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error loading evaluation details', classes: 'red rounded'});
+                    });
+            });
+        });
+    });
+        
+    function renderEvaluationDetail(data) {
+        const content = document.getElementById('evaluation-detail-content');
+        const evalData = data.evaluation;
+        
+        let html = `
+            <div class="evaluation-detail-container">
+                <div class="row">
+                    <div class="col s12">
+                        <p class="grey-text text-lighten-2">
+                            ${new Date(evalData.evaluation_date).toLocaleDateString()} • 
+                            ${evalData.evaluation_type.replace('_', ' ').toUpperCase()}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col s12">
+                        <div class="glass-card" style="padding: 15px;">
+                            <div class="row">
+                                <div class="col s6">
+                                    <h6 class="cyan-text text-lighten-3">Provider</h6>
+                                    <p class="white-text">${evalData.provider_name}</p>`;
+        
+        if (evalData.clinic_name) {
+            html += `<p class="grey-text text-lighten-2">${evalData.clinic_name}</p>`;
+        }
+        
+        html += `</div>`;
+        
+        if (evalData.follow_up_date) {
+            html += `
+                <div class="col s6">
+                    <h6 class="cyan-text text-lighten-3">Follow-up</h6>
+                    <p class="white-text">${new Date(evalData.follow_up_date).toLocaleDateString()}</p>
+                </div>`;
+        }
+        
+        html += `</div></div></div></div>`;
+        
+        // Chief Complaint
+        html += `
+            <div class="row">
+                <div class="col s12">
+                    <div class="glass-card" style="padding: 15px;">
+                        <h6 class="cyan-text text-lighten-3">Chief Complaint</h6>
+                        <p class="white-text">${evalData.chief_complaint}</p>
+                    </div>
+                </div>
+            </div>`;
+        
+        // Diagnosis
+        if (evalData.diagnosis) {
+            html += `
+                <div class="row">
+                    <div class="col s12">
+                        <div class="glass-card" style="padding: 15px;">
+                            <h6 class="cyan-text text-lighten-3">Diagnosis</h6>
+                            <p class="white-text">${evalData.diagnosis}</p>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        // Recommendations
+        if (evalData.recommendations) {
+            html += `
+                <div class="row">
+                    <div class="col s12">
+                        <div class="glass-card" style="padding: 15px;">
+                            <h6 class="cyan-text text-lighten-3">Recommendations</h6>
+                            <p class="white-text">${evalData.recommendations}</p>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        // Vitals
+        if (data.vitals && data.vitals.length > 0) {
+            html += `
+                <div class="row">
+                    <div class="col s12">
+                        <h6 class="cyan-text text-lighten-3" style="margin-top: 20px;">
+                            <i class="material-icons left">favorite</i>
+                            Vitals Recorded
+                        </h6>
+                        <div class="row">`;
+            
+            data.vitals.forEach(vital => {
+                html += `
+                    <div class="col s12 m6">
+                        <div class="glass-card" style="padding: 15px; margin: 5px 0;">
+                            <div class="row">
+                                <div class="col s8">
+                                    <small class="grey-text">${new Date(vital.recorded_at).toLocaleTimeString()}</small>`;
+                
+                if (vital.blood_pressure) {
+                    html += `<p class="white-text">${vital.blood_pressure}</p>`;
+                }
+                
+                html += `</div>
+                                <div class="col s4 right-align">`;
+                
+                if (vital.heart_rate) {
+                    html += `<span class="badge cyan">${vital.heart_rate} BPM</span>`;
+                }
+                
+                html += `</div></div></div></div>`;
+            });
+            
+            html += `</div></div></div>`;
+        }
+        
+        content.innerHTML = html;
+    }
+    
+    
+</script>
+{% endblock %}

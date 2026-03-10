@@ -1,0 +1,523 @@
+<!-- app/health/templates/health/conditions.html -->
+{% extends "layout.html" %}
+
+{% block title %}Health Conditions - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="row">
+        <div class="col s12">
+            <h4 class="white-text"><i class="material-icons left cyan-text text-lighten-3">healing</i>Health Conditions</h4>
+            <p class="grey-text text-lighten-2">Manage your health conditions and diagnoses</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col s12 m4">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <div class="large-text">{{ active_conditions|length }}</div>
+                    <small class="grey-text">Active Conditions</small>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m4">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <div class="large-text">{{ resolved_conditions|length }}</div>
+                    <small class="grey-text">Resolved Conditions</small>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m4">
+            <div class="glass-card center-align">
+                <div class="white-text">
+                    <button href="#add-condition-modal" class="btn cyan darken-2 waves-effect waves-light" id="add-condition-btn">
+                        <i class="material-icons left">add</i> Add Condition
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Conditions -->
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h5><i class="material-icons left green-text">check_circle</i>Active Conditions</h5>
+                    </span>
+                    
+                    {% if active_conditions %}
+                    <div class="conditions-grid">
+                        {% for condition in active_conditions %}
+                        <div class="condition-card glass-card" style="padding: 20px; margin: 10px 0;">
+                            <div class="row">
+                                <div class="col s8">
+                                    <h6 class="white-text">{{ condition.name }}</h6>
+                                    <div class="condition-meta">
+                                        {% if condition.type %}
+                                        <span class="badge cyan">{{ condition.type|title }}</span>
+                                        {% endif %}
+                                        
+                                        {% if condition.severity %}
+                                        <span class="badge 
+                                            {% if condition.severity == 'severe' %}red
+                                            {% elif condition.severity == 'moderate' %}orange
+                                            {% else %}green{% endif %}">
+                                            {{ condition.severity|title }}
+                                        </span>
+                                        {% endif %}
+                                        
+                                        {% if condition.diagnosis_date %}
+                                        <span class="grey-text text-lighten-2">
+                                            <i class="material-icons tiny">calendar_today</i>
+                                            {{ condition.diagnosis_date.strftime('%b %Y') }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if condition.symptoms %}
+                                    <div class="condition-symptoms">
+                                        <small class="cyan-text text-lighten-3">Symptoms:</small>
+                                        <p class="grey-text text-lighten-2">{{ condition.symptoms|truncate(100) }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if condition.treatment %}
+                                    <div class="condition-treatment">
+                                        <small class="cyan-text text-lighten-3">Treatment:</small>
+                                        <p class="grey-text text-lighten-2">{{ condition.treatment|truncate(100) }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col s4 right-align">
+                                    <div class="condition-actions">
+                                        <button class="btn-flat cyan-text view-condition-btn" data-id="{{ condition.id }}">
+                                            <i class="material-icons">visibility</i>
+                                        </button>
+                                        <button class="btn-flat yellow-text resolve-condition-btn" data-id="{{ condition.id }}">
+                                            <i class="material-icons">done</i>
+                                        </button>
+                                        <button class="btn-flat red-text delete-condition-btn" data-id="{{ condition.id }}">
+                                            <i class="material-icons">delete</i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="grey-text text-lighten-2 center-align">No active health conditions</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resolved Conditions -->
+    {% if resolved_conditions %}
+    <div class="row">
+        <div class="col s12">
+            <div class="glass-card">
+                <div class="card-content white-text">
+                    <span class="card-title">
+                        <h5><i class="material-icons left grey-text">archive</i>Resolved Conditions</h5>
+                    </span>
+                    
+                    <div class="resolved-conditions">
+                        {% for condition in resolved_conditions %}
+                        <div class="condition-card glass-card" style="padding: 15px; margin: 10px 0; opacity: 0.8;">
+                            <div class="row">
+                                <div class="col s10">
+                                    <h6 class="white-text">{{ condition.name }}</h6>
+                                    <div class="condition-meta">
+                                        {% if condition.diagnosis_date %}
+                                        <span class="grey-text text-lighten-2">
+                                            Diagnosed: {{ condition.diagnosis_date.strftime('%b %Y') }}
+                                        </span>
+                                        {% endif %}
+                                        {% if condition.status == 'resolved' %}
+                                        <span class="badge grey">Resolved</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col s2 right-align">
+                                    <button class="btn-flat cyan-text view-condition-btn" data-id="{{ condition.id }}">
+                                        <i class="material-icons">visibility</i>
+                                    </button>
+                                    <button class="btn-flat red-text delete-condition-btn" data-id="{{ condition.id }}">
+                                        <i class="material-icons">delete</i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+<!-- Hover Button For Add Condition -->
+<div class="fixed-action-btn">
+    <a href="#add-condition-modal" class="btn-floating btn-large cyan darken-2" id="add-condition-btn">
+        <i class="large material-icons">add</i>
+    </a>
+</div>
+
+<!-- Add Condition Modal -->
+<div id="add-condition-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4>Add Health Condition</h4>
+        
+        <form id="add-condition-form" action="{{ url_for('health.new_condition') }}" method="POST">
+            <div class="row">
+                <div class="input-field col s12">
+                    <input type="text" id="condition_name" name="name" class="white-text" required>
+                    <label for="condition_name">Condition Name *</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    <select id="condition_type" name="type" class="white-text">
+                        <option value="" disabled selected>Select Type</option>
+                        <option value="chronic">Chronic</option>
+                        <option value="acute">Acute</option>
+                        <option value="genetic">Genetic</option>
+                        <option value="autoimmune">Autoimmune</option>
+                        <option value="infectious">Infectious</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <label>Condition Type</label>
+                </div>
+                <div class="input-field col s12 m6">
+                    <select id="condition_severity" name="severity" class="white-text">
+                        <option value="" disabled selected>Select Severity</option>
+                        <option value="mild">Mild</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="severe">Severe</option>
+                    </select>
+                    <label>Severity</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    <input type="date" id="diagnosis_date" name="diagnosis_date" class="white-text datepicker">
+                    <label for="diagnosis_date">Diagnosis Date</label>
+                </div>
+                <div class="input-field col s12 m6">
+                    <input type="text" id="icd10_code" name="icd10_code" class="white-text">
+                    <label for="icd10_code">ICD-10 Code (Optional)</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    <textarea id="condition_symptoms" name="symptoms" class="white-text materialize-textarea"></textarea>
+                    <label for="condition_symptoms">Symptoms</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    <textarea id="condition_treatment" name="treatment" class="white-text materialize-textarea"></textarea>
+                    <label for="condition_treatment">Treatment Plan</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="input-field col s12">
+                    <textarea id="condition_notes" name="notes" class="white-text materialize-textarea"></textarea>
+                    <label for="condition_notes">Additional Notes</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s12 m6">
+                    <div class="input-field">
+                        <input type="text" id="provider_name" name="provider_name" class="white-text">
+                        <label for="provider_name">Diagnosing Provider</label>
+                    </div>
+                </div>
+                <div class="col s12 m6">
+                    <label>
+                        <input type="checkbox" id="is_active" name="is_active" class="filled-in" checked>
+                        <span class="white-text">Active Condition</span>
+                    </label>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+        <button type="submit" class="btn cyan darken-2" id="save-condition-btn">Save Condition</button>
+    </div>
+</div>
+
+<!-- Condition Detail Modal -->
+<div id="condition-detail-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4>Condition Details</h4>
+        <div id="condition-detail-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="modal-close btn-flat grey-text">Close</button>
+    </div>
+</div>
+
+<style>
+    .conditions-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .condition-card {
+        transition: all 0.3s ease;
+    }
+    
+    .condition-card:hover {
+        background: rgba(128, 222, 234, 0.05);
+        transform: translateY(-2px);
+    }
+    
+    .condition-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 10px 0;
+        align-items: center;
+    }
+    
+    .condition-symptoms,
+    .condition-treatment {
+        margin-top: 10px;
+    }
+    
+    .condition-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .resolved-conditions {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .badge {
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        color: white;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addModal = M.Modal.init(document.getElementById('add-condition-modal'));
+        const detailModal = M.Modal.init(document.getElementById('condition-detail-modal'));
+        let currentConditionId = null;
+        
+        
+        // View Condition Details
+        document.querySelectorAll('.view-condition-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const conditionId = this.getAttribute('data-id');
+                currentConditionId = conditionId;
+                
+                fetch(`/api/conditions/${conditionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderConditionDetail(data);
+                        detailModal.open();
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error loading condition details', classes: 'red rounded'});
+                    });
+            });
+        });
+        // Delete Condition
+        document.querySelectorAll('.delete-condition-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const conditionId = this.getAttribute('data-id');
+                
+                if (confirm('Delete this condition?')) {
+                    fetch(`/api/conditions/${conditionId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            M.toast({html: data.message, classes: 'green rounded'});
+                            // Remove closest condition-card
+                            this.closest('.condition-card').remove();
+                        }
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error deleting condition', classes: 'red rounded'});
+                    });
+                }
+            });
+        });
+        
+        // Resolve Condition
+        document.querySelectorAll('.resolve-condition-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const conditionId = this.getAttribute('data-id');
+                
+                if (confirm('Mark this condition as resolved?')) {
+                    fetch(`/api/conditions/${conditionId}/resolve`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            M.toast({html: data.message, classes: 'green rounded'});
+                            location.reload(); // Reload to update status
+                        }
+                    })
+                    .catch(error => {
+                        M.toast({html: 'Error resolving condition', classes: 'red rounded'});
+                    });
+                }
+            });
+        });
+        
+        // Initialize select dropdowns and datepickers
+        M.FormSelect.init(document.querySelectorAll('select'));
+        M.Datepicker.init(document.querySelectorAll('.datepicker'), {
+            format: 'yyyy-mm-dd',
+            autoClose: true
+        });
+        
+        function renderConditionDetail(data) {
+            const content = document.getElementById('condition-detail-content');
+            
+            let html = `
+                <div class="condition-detail-container">
+                    <div class="row">
+                        <div class="col s12">
+                            <h5 class="cyan-text text-lighten-3">${data.name}</h5>
+                            <div class="condition-meta">`;
+            
+            if (data.type) {
+                html += `<span class="badge cyan">${data.type.charAt(0).toUpperCase() + data.type.slice(1)}</span>`;
+            }
+            
+            if (data.severity) {
+                const severityClass = {
+                    'severe': 'red',
+                    'moderate': 'orange',
+                    'mild': 'green'
+                }[data.severity] || 'grey';
+                
+                html += `<span class="badge ${severityClass}">
+                    ${data.severity.charAt(0).toUpperCase() + data.severity.slice(1)}
+                </span>`;
+            }
+            
+            if (data.status) {
+                const statusClass = data.status === 'active' ? 'green' : 'grey';
+                html += `<span class="badge ${statusClass}">
+                    ${data.status.charAt(0).toUpperCase() + data.status.slice(1)}
+                </span>`;
+            }
+            
+            html += `</div></div></div>`;
+            
+            // Details Grid
+            html += `<div class="row">`;
+            
+            if (data.diagnosis_date) {
+                html += `
+                    <div class="col s12 m6">
+                        <div class="glass-card" style="padding: 15px; margin: 10px 0;">
+                            <h6 class="cyan-text text-lighten-3">Diagnosis Date</h6>
+                            <p class="white-text">${new Date(data.diagnosis_date).toLocaleDateString()}</p>
+                        </div>
+                    </div>`;
+            }
+            
+            if (data.icd10_code) {
+                html += `
+                    <div class="col s12 m6">
+                        <div class="glass-card" style="padding: 15px; margin: 10px 0;">
+                            <h6 class="cyan-text text-lighten-3">ICD-10 Code</h6>
+                            <p class="white-text">${data.icd10_code}</p>
+                        </div>
+                    </div>`;
+            }
+            
+            html += `</div>`;
+            
+            // Symptoms
+            if (data.symptoms) {
+                html += `
+                    <div class="row">
+                        <div class="col s12">
+                            <div class="glass-card" style="padding: 15px;">
+                                <h6 class="cyan-text text-lighten-3">Symptoms</h6>
+                                <p class="white-text">${data.symptoms}</p>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            
+            // Treatment
+            if (data.treatment) {
+                html += `
+                    <div class="row">
+                        <div class="col s12">
+                            <div class="glass-card" style="padding: 15px;">
+                                <h6 class="cyan-text text-lighten-3">Treatment Plan</h6>
+                                <p class="white-text">${data.treatment}</p>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            
+            // Provider
+            if (data.provider_name) {
+                html += `
+                    <div class="row">
+                        <div class="col s12">
+                            <div class="glass-card" style="padding: 15px;">
+                                <h6 class="cyan-text text-lighten-3">Diagnosing Provider</h6>
+                                <p class="white-text">${data.provider_name}</p>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            
+            // Notes
+            if (data.notes) {
+                html += `
+                    <div class="row">
+                        <div class="col s12">
+                            <div class="glass-card" style="padding: 15px;">
+                                <h6 class="cyan-text text-lighten-3">Additional Notes</h6>
+                                <p class="white-text">${data.notes}</p>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            
+            html += `</div>`;
+            content.innerHTML = html;
+        }
+    });
+</script>
+{% endblock %}

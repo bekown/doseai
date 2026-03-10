@@ -1,0 +1,535 @@
+<!-- templates/insights/adherence.html -->
+{% extends "insights/base_insights.html" %}
+
+{% block insights_content %}
+<!-- Header with Filter -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="row valign-wrapper">
+                <div class="col s8">
+                    <h4 class="white-text">
+                        <i class="material-icons left">trending_up</i>Adherence Analytics
+                    </h4>
+                    <p class="grey-text text-lighten-2">
+                        Track your medication adherence patterns and trends
+                    </p>
+                </div>
+                <div class="col s4">
+                    <form method="GET" class="right-align">
+                        <div class="input-field">
+                            <select name="days" onchange="this.form.submit()">
+                                <option value="7" {% if days==7 %}selected{% endif %}>Last 7 days</option>
+                                <option value="14" {% if days==14 %}selected{% endif %}>Last 14 days</option>
+                                <option value="30" {% if days==30 %}selected{% endif %}>Last 30 days</option>
+                                <option value="90" {% if days==90 %}selected{% endif %}>Last 90 days</option>
+                            </select>
+                            <label>Date Range</label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overall Adherence Stats -->
+<div class="row">
+    <div class="col s12 m4">
+        <div class="glass-card center-align stat-card">
+            <div class="stat-icon">
+                <i class="material-icons large">check_circle</i>
+            </div>
+            <h2 class="white-text" style="margin: 10px 0;">
+                {{ "%.1f"|format(adherence_rate) }}%
+            </h2>
+            <p class="cyan-text text-lighten-2">Overall Adherence</p>
+            <p class="grey-text text-lighten-2">Last {{ days }} days</p>
+        </div>
+    </div>
+    
+    <div class="col s12 m4">
+        <div class="glass-card center-align stat-card">
+            <div class="stat-icon">
+                <i class="material-icons large">calendar_today</i>
+            </div>
+            <h2 class="white-text" style="margin: 10px 0;">
+                {{ best_day.adherence_rate if best_day else 'N/A' }}%
+            </h2>
+            <p class="cyan-text text-lighten-2">Best Day</p>
+            <p class="grey-text text-lighten-2">{{ best_day.day if best_day else 'No data' }}</p>
+        </div>
+    </div>
+    
+    <div class="col s12 m4">
+        <div class="glass-card center-align stat-card">
+            <div class="stat-icon">
+                <i class="material-icons large">warning</i>
+            </div>
+            <h2 class="white-text" style="margin: 10px 0;">
+                {{ worst_day.adherence_rate if worst_day else 'N/A' }}%
+            </h2>
+            <p class="cyan-text text-lighten-2">Challenging Day</p>
+            <p class="grey-text text-lighten-2">{{ worst_day.day if worst_day else 'No data' }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Adherence Chart -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">calendar_view_day</i>Daily Adherence Timeline
+                </h5>
+                <span class="badge blue lighten-1">{{ days }} days</span>
+            </div>
+            <div class="card-content">
+                <div class="daily-adherence-chart">
+                    <div class="timeline">
+                        {% for day in daily_adherence %}
+                        <div class="timeline-day">
+                            <div class="day-label white-text">
+                                {{ day.date[-5:] }}
+                            </div>
+                            <div class="day-bar-container">
+                                {% if day.has_data %}
+                                <div class="day-bar" 
+                                     style="height: {{ day.rate }}px; 
+                                            background: linear-gradient(to top, 
+                                                {% if day.rate >= 90 %}#4CAF50{% elif day.rate >= 70 %}#FF9800{% else %}#F44336{% endif %}, 
+                                                transparent);">
+                                </div>
+                                <div class="day-value {{ 'green-text' if day.rate >= 90 else 'yellow-text' if day.rate >= 70 else 'red-text' }}">
+                                    {{ "%.0f"|format(day.rate) }}%
+                                </div>
+                                {% else %}
+                                <div class="no-data">
+                                    <i class="material-icons tiny grey-text">remove</i>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Medication-Specific Adherence -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">medication</i>Medication Performance
+                </h5>
+                <span class="badge green lighten-1">{{ medication_adherence|length }} medications</span>
+            </div>
+            <div class="card-content">
+                <div class="medication-adherence-grid">
+                    {% for med in medication_adherence %}
+                    <div class="medication-card glass-card-inner">
+                        <div class="medication-header">
+                            <div class="medication-name">
+                                <h6 class="white-text">{{ med.name }}</h6>
+                            </div>
+                            <div class="medication-stats">
+                                <span class="adherence-rate {{ 'green-text' if med.adherence_rate >= 90 else 'yellow-text' if med.adherence_rate >= 70 else 'red-text' }}">
+                                    {{ "%.1f"|format(med.adherence_rate) }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="progress glass-progress">
+                            <div class="determinate {{ 'green' if med.adherence_rate >= 90 else 'yellow' if med.adherence_rate >= 70 else 'red' }}" 
+                                 style="width: {{ med.adherence_rate }}%"></div>
+                        </div>
+                        <div class="medication-details">
+                            <div class="detail">
+                                <span class="grey-text text-lighten-2">Taken:</span>
+                                <span class="white-text">{{ med.taken_doses }}</span>
+                            </div>
+                            <div class="detail">
+                                <span class="grey-text text-lighten-2">Missed:</span>
+                                <span class="white-text">{{ med.missed_doses }}</span>
+                            </div>
+                            <div class="detail">
+                                <span class="grey-text text-lighten-2">Total:</span>
+                                <span class="white-text">{{ med.total_doses }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Time & Day Analysis -->
+<div class="row">
+    <!-- Time of Day Analysis -->
+    <div class="col s12 m6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">schedule</i>Time of Day Analysis
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="time-analysis">
+                    {% for hour in hour_data %}
+                    <div class="time-slot">
+                        <div class="time-label white-text">
+                            {{ hour.hour }}:00
+                        </div>
+                        <div class="time-bar-container">
+                            {% if hour.adherence_rate is not none %}
+                            <div class="time-bar" style="width: {{ hour.adherence_rate }}%;"></div>
+                            <div class="time-value white-text">
+                                {{ "%.0f"|format(hour.adherence_rate) }}%
+                            </div>
+                            {% else %}
+                            <div class="no-data-time">
+                                <span class="grey-text">No doses</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Day of Week Analysis -->
+    <div class="col s12 m6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">date_range</i>Day of Week Analysis
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="day-analysis">
+                    {% for day in day_data %}
+                    <div class="day-slot">
+                        <div class="day-label white-text">
+                            {{ day.day[:3] }}
+                        </div>
+                        <div class="day-performance">
+                            {% if day.adherence_rate is not none %}
+                            <div class="performance-bar">
+                                <div class="bar-fill" style="height: {{ day.adherence_rate }}%;"></div>
+                            </div>
+                            <div class="day-value {{ 'green-text' if day.adherence_rate >= 90 else 'yellow-text' if day.adherence_rate >= 70 else 'red-text' }}">
+                                {{ "%.0f"|format(day.adherence_rate) }}%
+                            </div>
+                            {% else %}
+                            <div class="no-data-day">
+                                <i class="material-icons tiny grey-text">remove</i>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Insights & Recommendations -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">lightbulb</i>Adherence Insights
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="row">
+                    <div class="col s12 m4">
+                        <div class="insight-item center-align">
+                            <i class="material-icons large {{ 'green-text' if best_day.adherence_rate >= 90 else 'yellow-text' if best_day.adherence_rate >= 70 else 'red-text' }}">
+                                emoji_events
+                            </i>
+                            <h6 class="white-text">Best Performance</h6>
+                            <p class="grey-text text-lighten-2">
+                                {{ best_day.day if best_day else 'No data' }}
+                            </p>
+                            <p class="white-text">
+                                {{ "%.1f"|format(best_day.adherence_rate) if best_day else 'N/A' }}% adherence
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col s12 m4">
+                        <div class="insight-item center-align">
+                            <i class="material-icons large red-text">priority_high</i>
+                            <h6 class="white-text">Improvement Area</h6>
+                            <p class="grey-text text-lighten-2">
+                                {{ worst_day.day if worst_day else 'No data' }}
+                            </p>
+                            <p class="white-text">
+                                {{ "%.1f"|format(worst_day.adherence_rate) if worst_day else 'N/A' }}% adherence
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col s12 m4">
+                        <div class="insight-item center-align">
+                            <i class="material-icons large cyan-text">trending_up</i>
+                            <h6 class="white-text">Recommendation</h6>
+                            {% if adherence_rate >= 90 %}
+                            <p class="green-text">Excellent! Keep it up!</p>
+                            <p class="grey-text text-lighten-2 small-text">
+                                Maintain your routine for continued success
+                            </p>
+                            {% elif adherence_rate >= 70 %}
+                            <p class="yellow-text">Good work!</p>
+                            <p class="grey-text text-lighten-2 small-text">
+                                Focus on consistency to reach 90%+
+                            </p>
+                            {% else %}
+                            <p class="red-text">Needs improvement</p>
+                            <p class="grey-text text-lighten-2 small-text">
+                                Set reminders for challenging times
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="divider" style="margin: 30px 0;"></div>
+                
+                <div class="recommendations">
+                    <h6 class="white-text">Action Plan:</h6>
+                    <ul class="collection glass-collection">
+                        <li class="collection-item glass-collection-item">
+                            <i class="material-icons green-text left">check</i>
+                            <span class="white-text">Set reminders for your lowest adherence times</span>
+                        </li>
+                        <li class="collection-item glass-collection-item">
+                            <i class="material-icons green-text left">check</i>
+                            <span class="white-text">Review medications with adherence below 70%</span>
+                        </li>
+                        <li class="collection-item glass-collection-item">
+                            <i class="material-icons green-text left">check</i>
+                            <span class="white-text">Use weekly pill organizers for consistency</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    padding: 30px 20px;
+    border-radius: 20px;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    margin-bottom: 20px;
+}
+
+.daily-adherence-chart {
+    padding: 20px 0;
+    overflow-x: auto;
+}
+
+.timeline {
+    display: flex;
+    gap: 10px;
+    min-height: 200px;
+    align-items: flex-end;
+}
+
+.timeline-day {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 40px;
+}
+
+.day-bar-container {
+    position: relative;
+    width: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.day-bar {
+    width: 100%;
+    min-height: 1px;
+    border-radius: 5px 5px 0 0;
+    transition: height 0.5s ease;
+}
+
+.day-value {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.no-data {
+    padding: 10px;
+}
+
+.medication-adherence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.medication-card {
+    padding: 15px;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.medication-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-3px);
+}
+
+.medication-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.medication-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.detail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.time-analysis, .day-analysis {
+    padding: 20px 0;
+}
+
+.time-slot, .day-slot {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    gap: 15px;
+}
+
+.time-bar-container, .day-performance {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.time-bar {
+    height: 20px;
+    background: linear-gradient(to right, #4CAF50, #2196F3);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.time-label, .day-label {
+    width: 60px;
+}
+
+.performance-bar {
+    width: 30px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.bar-fill {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    background: linear-gradient(to top, #4CAF50, #81C784);
+    border-radius: 15px;
+    transition: height 0.5s ease;
+}
+
+.no-data-time, .no-data-day {
+    padding: 10px;
+}
+
+.insight-item {
+    padding: 20px;
+}
+
+.recommendations {
+    margin-top: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .medication-adherence-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .medication-adherence-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline {
+        gap: 5px;
+    }
+    
+    .timeline-day {
+        min-width: 30px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize select
+    var selectElems = document.querySelectorAll('select');
+    M.FormSelect.init(selectElems);
+    
+    // Animate progress bars on scroll
+    const observerOptions = {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animated');
+            }
+        });
+    }, observerOptions);
+    
+    // Observe progress bars
+    document.querySelectorAll('.determinate').forEach(bar => {
+        observer.observe(bar);
+    });
+});
+</script>
+{% endblock %}

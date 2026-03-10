@@ -1,0 +1,121 @@
+<!-- templates/notifications/action_required.html -->
+{% extends "notifications/index.html" %}
+
+{% block title %}Action Required - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <div class="valign-wrapper">
+                <div>
+                    <h3 class="white-text">Action Required</h3>
+                    <p class="grey-text text-lighten-2">Notifications requiring your attention</p>
+                </div>
+                <div class="right" style="margin-left: auto;">
+                    <a href="{{ url_for('notifications.mark_all_read') }}" 
+                       class="btn waves-effect waves-light green darken-2"
+                       onclick="return confirm('Mark all notifications as read?')">
+                        <i class="material-icons left">check_all</i> Mark All Read
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="row">
+        {% if notifications.items %}
+            {% for notification in notifications.items %}
+            <div class="col s12">
+                <div class="glass-card notification-card" style="padding: 20px; margin-bottom: 15px; border-left: 4px solid #f44336;">
+                    <div class="row valign-wrapper" style="margin-bottom: 0;">
+                        <div class="col s1">
+                            <i class="material-icons medium red-text">priority_high</i>
+                        </div>
+                        
+                        <div class="col s9">
+                            <h6 class="white-text" style="margin-top: 0;">
+                                {% if not notification.is_read %}<span class="new badge red" data-badge-caption="">NEW</span>{% endif %}
+                                {{ notification.title }}
+                            </h6>
+                            <p class="grey-text text-lighten-2" style="margin-bottom: 5px;">{{ notification.message }}</p>
+                            <div class="notification-meta">
+                                <span class="badge white-text" style="background-color: #f44336; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                                    Action Required
+                                </span>
+                                <span class="grey-text text-lighten-1" style="margin-left: 10px;">
+                                    <i class="material-icons tiny">access_time</i>
+                                    {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="col s2 right-align">
+                            <div class="notification-actions">
+                                <a href="{{ url_for('notifications.take_action', notification_id=notification.id) }}" 
+                                   class="btn waves-effect waves-light red" title="Take action">
+                                    <i class="material-icons left">play_arrow</i> Take Action
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            <div class="center-align">
+                <ul class="pagination white-text">
+                    {% if notifications.has_prev %}
+                    <li class="waves-effect">
+                        <a href="{{ url_for('notifications.action_required', page=notifications.prev_num) }}">
+                            <i class="material-icons">chevron_left</i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="disabled"><a href="#!"><i class="material-icons">chevron_left</i></a></li>
+                    {% endif %}
+                    
+                    {% for page_num in notifications.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                        {% if page_num %}
+                            {% if page_num == notifications.page %}
+                            <li class="active cyan darken-2"><a href="#!">{{ page_num }}</a></li>
+                            {% else %}
+                            <li class="waves-effect">
+                                <a href="{{ url_for('notifications.action_required', page=page_num) }}" class="white-text">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="disabled"><a href="#!">...</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if notifications.has_next %}
+                    <li class="waves-effect">
+                        <a href="{{ url_for('notifications.action_required', page=notifications.next_num) }}">
+                            <i class="material-icons">chevron_right</i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="disabled"><a href="#!"><i class="material-icons">chevron_right</i></a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% else %}
+            <div class="col s12">
+                <div class="glass-card center-align" style="padding: 50px;">
+                    <i class="material-icons large grey-text text-lighten-1" style="font-size: 64px;">check_circle</i>
+                    <h5 class="white-text">No Actions Required</h5>
+                    <p class="grey-text text-lighten-2">All notifications are up to date!</p>
+                    <a href="{{ url_for('notifications.index') }}" class="btn waves-effect waves-light cyan darken-2">
+                        View All Notifications
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

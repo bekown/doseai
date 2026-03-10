@@ -1,0 +1,99 @@
+<!-- templates/notifications/action.html -->
+{% extends "layout.html" %}
+
+{% block title %}Take Action - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12 m8 offset-m2">
+            <div class="glass-card" style="padding: 30px;">
+                <div class="center-align">
+                    <i class="material-icons large cyan-text" style="font-size: 64px;">touch_app</i>
+                    <h4 class="white-text">Take Action</h4>
+                    <p class="grey-text text-lighten-2">Record the action you've taken for this notification</p>
+                </div>
+
+                <div class="notification-preview glass-card" style="padding: 20px; margin: 20px 0; background: rgba(255,255,255,0.05);">
+                    <h6 class="white-text">{{ notification.title }}</h6>
+                    <p class="grey-text text-lighten-2">{{ notification.message }}</p>
+                    <div class="notification-meta">
+                        <span class="badge white-text" style="background-color: #2196f3; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                            {{ notification.type|replace('_', ' ')|title }}
+                        </span>
+                        <span class="grey-text text-lighten-1" style="margin-left: 10px;">
+                            <i class="material-icons tiny">access_time</i>
+                            {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('notifications.take_action', notification_id=notification.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Action Taken -->
+                    <div class="input-field">
+                        {{ form.action_taken(class="white-text") }}
+                        {{ form.action_taken.label(class="white-text") }}
+                    </div>
+                    
+                    <!-- Action Details -->
+                    <div class="input-field">
+                        {{ form.action_details(class="materialize-textarea white-text") }}
+                        {{ form.action_details.label(class="white-text") }}
+                    </div>
+                    
+                    <!-- Follow-up -->
+                    <p>
+                        <label>
+                            {{ form.follow_up_needed(class="filled-in") }}
+                            <span class="white-text">Follow-up Needed</span>
+                        </label>
+                    </p>
+                    
+                    <div id="follow-up-section" style="{% if not form.follow_up_needed.data %}display: none;{% endif %}">
+                        <div class="input-field">
+                            {{ form.follow_up_date(class="datepicker white-text") }}
+                            {{ form.follow_up_date.label(class="white-text") }}
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row" style="margin-top: 40px;">
+                        <div class="col s12 center-align">
+                            {{ form.submit(class="btn waves-effect waves-light cyan darken-2", style="margin-right: 10px;") }}
+                            
+                            <a href="{{ url_for('notifications.index') }}" class="btn-flat white-text" style="margin-left: 10px;">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        
+        // Initialize date pickers
+        var datepickers = document.querySelectorAll('.datepicker');
+        M.Datepicker.init(datepickers, {
+            format: 'yyyy-mm-dd',
+            autoClose: true
+        });
+        
+        // Toggle follow-up section
+        const followUpCheckbox = document.getElementById('follow_up_needed');
+        const followUpSection = document.getElementById('follow-up-section');
+        
+        followUpCheckbox.addEventListener('change', function() {
+            followUpSection.style.display = this.checked ? 'block' : 'none';
+        });
+    });
+</script>
+{% endblock %}

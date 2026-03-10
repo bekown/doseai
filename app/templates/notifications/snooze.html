@@ -1,0 +1,101 @@
+<!-- templates/notifications/snooze.html -->
+{% extends "layout.html" %}
+
+{% block title %}Snooze Notification - DoseAI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col s12 m8 offset-m2">
+            <div class="glass-card" style="padding: 30px;">
+                <div class="center-align">
+                    <i class="material-icons large orange-text" style="font-size: 64px;">snooze</i>
+                    <h4 class="white-text">Snooze Notification</h4>
+                    <p class="grey-text text-lighten-2">Delay this notification for later</p>
+                </div>
+
+                <div class="notification-preview glass-card" style="padding: 20px; margin: 20px 0; background: rgba(255,255,255,0.05);">
+                    <h6 class="white-text">{{ notification.title }}</h6>
+                    <p class="grey-text text-lighten-2">{{ notification.message }}</p>
+                    <div class="notification-meta">
+                        <span class="badge white-text" style="background-color: #ff9800; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                            {{ notification.priority|title }}
+                        </span>
+                        <span class="grey-text text-lighten-1" style="margin-left: 10px;">
+                            <i class="material-icons tiny">access_time</i>
+                            {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('notifications.snooze_notification', notification_id=notification.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Snooze Duration -->
+                    <div class="input-field">
+                        {{ form.snooze_duration(class="white-text") }}
+                        {{ form.snooze_duration.label(class="white-text") }}
+                    </div>
+                    
+                    <!-- Custom Minutes -->
+                    <div id="custom-minutes-section" style="{% if form.snooze_duration.data != 'custom' %}display: none;{% endif %}">
+                        <div class="input-field">
+                            {{ form.custom_minutes(class="white-text") }}
+                            {{ form.custom_minutes.label(class="white-text") }}
+                        </div>
+                    </div>
+                    
+                    <!-- Snooze Reason -->
+                    <div class="input-field">
+                        {{ form.snooze_reason(class="white-text") }}
+                        {{ form.snooze_reason.label(class="white-text") }}
+                    </div>
+                    
+                    <!-- Other Reason -->
+                    <div id="other-reason-section" style="{% if form.snooze_reason.data != 'other' %}display: none;{% endif %}">
+                        <div class="input-field">
+                            {{ form.other_reason(class="materialize-textarea white-text") }}
+                            {{ form.other_reason.label(class="white-text") }}
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row" style="margin-top: 40px;">
+                        <div class="col s12 center-align">
+                            {{ form.submit(class="btn waves-effect waves-light orange darken-2", style="margin-right: 10px;") }}
+                            
+                            <a href="{{ url_for('notifications.index') }}" class="btn-flat white-text" style="margin-left: 10px;">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize select dropdowns
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        
+        // Toggle custom minutes section
+        const snoozeDuration = document.getElementById('snooze_duration');
+        const customMinutesSection = document.getElementById('custom-minutes-section');
+        
+        snoozeDuration.addEventListener('change', function() {
+            customMinutesSection.style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+        
+        // Toggle other reason section
+        const snoozeReason = document.getElementById('snooze_reason');
+        const otherReasonSection = document.getElementById('other-reason-section');
+        
+        snoozeReason.addEventListener('change', function() {
+            otherReasonSection.style.display = this.value === 'other' ? 'block' : 'none';
+        });
+    });
+</script>
+{% endblock %}

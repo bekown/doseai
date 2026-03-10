@@ -1,0 +1,1068 @@
+<!-- templates/insights/goals.html -->
+{% extends "insights/base_insights.html" %}
+
+{% block insights_content %}
+<!-- Header Section -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="row valign-wrapper">
+                <div class="col s8">
+                    <h4 class="white-text">
+                        <i class="material-icons left">flag</i>Health Goals
+                    </h4>
+                    <p class="grey-text text-lighten-2">
+                        Set and track your health goals for better outcomes
+                    </p>
+                </div>
+                <div class="col s4 right-align">
+                    <a href="#goal-modal" class="btn waves-effect waves-light cyan darken-2 modal-trigger">
+                        <i class="material-icons left">add</i>New Goal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goals Overview -->
+<div class="row">
+    <!-- Progress Summary -->
+    <div class="col s12 m4">
+        <div class="glass-card center-align progress-summary">
+            <div class="summary-icon">
+                <i class="material-icons large cyan-text">emoji_events</i>
+            </div>
+            <h3 class="white-text" style="margin: 15px 0;">
+                {{ goals|length }}
+            </h3>
+            <p class="cyan-text text-lighten-2">Active Goals</p>
+            <div class="progress-stats">
+                <div class="stat-item">
+                    <span class="white-text">On Track:</span>
+                    <span class="right green-text">
+                        {{ goals|selectattr('status', 'equalto', 'on_track')|list|length }}
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span class="white-text">Needs Attention:</span>
+                    <span class="right orange-text">
+                        {{ goals|selectattr('status', 'equalto', 'needs_attention')|list|length }}
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span class="white-text">Completed:</span>
+                    <span class="right blue-text">
+                        {{ goals|selectattr('status', 'equalto', 'completed')|list|length }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Goal Categories -->
+    <div class="col s12 m8">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">category</i>Goal Categories
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="goal-categories">
+                    {% set categories = ['adherence', 'vitals', 'symptoms', 'lifestyle', 'weight'] %}
+                    {% for category in categories %}
+                    {% set category_goals = goals|selectattr('type', 'equalto', category)|list %}
+                    <div class="category-item">
+                        <div class="category-info">
+                            <div class="category-icon">
+                                <i class="material-icons {{ 'cyan-text' if category == 'adherence' else 'red-text' if category == 'vitals' else 'orange-text' if category == 'symptoms' else 'green-text' if category == 'lifestyle' else 'purple-text' }}">
+                                    {% if category == 'adherence' %}check_circle
+                                    {% elif category == 'vitals' %}monitor_heart
+                                    {% elif category == 'symptoms' %}healing
+                                    {% elif category == 'lifestyle' %}self_improvement
+                                    {% else %}scale{% endif %}
+                                </i>
+                            </div>
+                            <div class="category-details">
+                                <h6 class="white-text">
+                                    {% if category == 'adherence' %}Adherence
+                                    {% elif category == 'vitals' %}Vital Signs
+                                    {% elif category == 'symptoms' %}Symptoms
+                                    {% elif category == 'lifestyle' %}Lifestyle
+                                    {% else %}Weight{% endif %}
+                                </h6>
+                                <p class="grey-text text-lighten-2">
+                                    {{ category_goals|length }} active goal{{ 's' if category_goals|length != 1 else '' }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="category-progress">
+                            {% if category_goals %}
+                                {% set avg_progress = category_goals|map(attribute='progress')|sum / category_goals|length %}
+                                <div class="progress small-progress">
+                                    <div class="determinate {{ 'green' if avg_progress >= 80 else 'orange' if avg_progress >= 50 else 'red' }}" 
+                                         style="width: {{ avg_progress }}%">
+                                    </div>
+                                </div>
+                                <span class="progress-value {{ 'green-text' if avg_progress >= 80 else 'orange-text' if avg_progress >= 50 else 'red-text' }}">
+                                    {{ "%.0f"|format(avg_progress) }}%
+                                </span>
+                            {% else %}
+                                <span class="grey-text text-lighten-2">No goals set</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Goals -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">list</i>Active Goals
+                </h5>
+                <div class="goal-filters">
+                    <a class="btn-flat white-text active" data-filter="all">All</a>
+                    <a class="btn-flat white-text" data-filter="on_track">On Track</a>
+                    <a class="btn-flat white-text" data-filter="needs_attention">Needs Attention</a>
+                    <a class="btn-flat white-text" data-filter="completed">Completed</a>
+                </div>
+            </div>
+            <div class="card-content">
+                {% if goals %}
+                <div class="goals-list">
+                    {% for goal in goals %}
+                    <div class="goal-item {{ goal.status }}">
+                        <div class="goal-header">
+                            <div class="goal-type">
+                                <i class="material-icons {{ 'cyan-text' if goal.type == 'adherence' else 'red-text' if goal.type == 'vitals' else 'orange-text' if goal.type == 'symptoms' else 'green-text' if goal.type == 'lifestyle' else 'purple-text' }}">
+                                    {% if goal.type == 'adherence' %}check_circle
+                                    {% elif goal.type == 'vitals' %}monitor_heart
+                                    {% elif goal.type == 'symptoms' %}healing
+                                    {% elif goal.type == 'lifestyle' %}self_improvement
+                                    {% else %}scale{% endif %}
+                                </i>
+                                <span class="white-text">{{ goal.type|replace('_', ' ')|title }}</span>
+                            </div>
+                            <div class="goal-status">
+                                <span class="status-badge {{ goal.status }}">
+                                    {{ goal.status|replace('_', ' ')|title }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="goal-content">
+                            <h6 class="white-text">{{ goal.target }}</h6>
+                            <p class="grey-text text-lighten-2">{{ goal.timeframe|title }} goal • Current: {{ goal.current }}</p>
+                            
+                            <div class="goal-progress">
+                                <div class="progress-info">
+                                    <span class="white-text">Progress</span>
+                                    <span class="{{ 'green-text' if goal.progress >= 80 else 'orange-text' if goal.progress >= 50 else 'red-text' }}">
+                                        {{ "%.0f"|format(goal.progress) }}%
+                                    </span>
+                                </div>
+                                <div class="progress">
+                                    <div class="determinate {{ 'green' if goal.progress >= 80 else 'orange' if goal.progress >= 50 else 'red' }}" 
+                                         style="width: {{ goal.progress }}%">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="goal-timeline">
+                                <div class="timeline">
+                                    <div class="timeline-start">
+                                        <span class="grey-text text-lighten-2">Start</span>
+                                        <span class="white-text">{{ goal.start_date if goal.start_date else 'Today' }}</span>
+                                    </div>
+                                    <div class="timeline-progress">
+                                        <div class="progress-dot" style="left: {{ goal.progress }}%;"></div>
+                                    </div>
+                                    <div class="timeline-end">
+                                        <span class="grey-text text-lighten-2">Target</span>
+                                        <span class="white-text">{{ goal.end_date if goal.end_date else 'Ongoing' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="goal-actions">
+                            <a href="#!" class="btn-flat cyan-text update-goal" data-id="{{ goal.id }}">
+                                <i class="material-icons left">edit</i>Update
+                            </a>
+                            <a href="#!" class="btn-flat green-text log-progress" data-id="{{ goal.id }}">
+                                <i class="material-icons left">add</i>Log Progress
+                            </a>
+                            {% if goal.status != 'completed' %}
+                            <a href="#!" class="btn-flat orange-text" data-id="{{ goal.id }}">
+                                <i class="material-icons left">notifications</i>Remind
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="center-align" style="padding: 60px 20px;">
+                    <div class="empty-goals">
+                        <i class="material-icons large cyan-text">flag</i>
+                        <h5 class="white-text">No Goals Set Yet</h5>
+                        <p class="grey-text text-lighten-2">Set your first health goal to get started</p>
+                        <a href="#goal-modal" class="btn waves-effect waves-light cyan darken-2 modal-trigger" style="margin-top: 20px;">
+                            <i class="material-icons left">add</i>Create Your First Goal
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goal Achievement History -->
+<div class="row">
+    <div class="col s12">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">history</i>Goal History
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="goal-history">
+                    <!-- Example history items -->
+                    <div class="history-timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-icon">
+                                <i class="material-icons green-text">check_circle</i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="white-text">Achieved 90% Adherence</h6>
+                                <p class="grey-text text-lighten-2">Medication adherence goal completed 2 days ago</p>
+                                <div class="timeline-meta">
+                                    <span class="badge green white-text">Completed</span>
+                                    <span class="grey-text text-lighten-2">Duration: 30 days</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item on_track">
+                            <div class="timeline-icon">
+                                <i class="material-icons cyan-text">trending_up</i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="white-text">Blood Pressure Improvement</h6>
+                                <p class="grey-text text-lighten-2">Progress: 135/85 → 128/82 over 2 weeks</p>
+                                <div class="timeline-meta">
+                                    <span class="badge cyan white-text">On Track</span>
+                                    <span class="grey-text text-lighten-2">75% complete</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item needs_attention">
+                            <div class="timeline-icon">
+                                <i class="material-icons orange-text">warning</i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="white-text">Symptom Reduction Goal</h6>
+                                <p class="grey-text text-lighten-2">Progress slower than expected</p>
+                                <div class="timeline-meta">
+                                    <span class="badge orange white-text">Needs Attention</span>
+                                    <span class="grey-text text-lighten-2">40% complete</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goal Setting Tips -->
+<div class="row">
+    <div class="col s12 m6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">lightbulb</i>SMART Goals
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="smart-goals">
+                    <div class="smart-item">
+                        <div class="smart-letter cyan-text">S</div>
+                        <div class="smart-content">
+                            <h6 class="white-text">Specific</h6>
+                            <p class="grey-text text-lighten-2">Clearly define what you want to achieve</p>
+                        </div>
+                    </div>
+                    <div class="smart-item">
+                        <div class="smart-letter green-text">M</div>
+                        <div class="smart-content">
+                            <h6 class="white-text">Measurable</h6>
+                            <p class="grey-text text-lighten-2">Track progress with numbers or metrics</p>
+                        </div>
+                    </div>
+                    <div class="smart-item">
+                        <div class="smart-letter orange-text">A</div>
+                        <div class="smart-content">
+                            <h6 class="white-text">Achievable</h6>
+                            <p class="grey-text text-lighten-2">Set realistic goals within your ability</p>
+                        </div>
+                    </div>
+                    <div class="smart-item">
+                        <div class="smart-letter red-text">R</div>
+                        <div class="smart-content">
+                            <h6 class="white-text">Relevant</h6>
+                            <p class="grey-text text-lighten-2">Align goals with your health priorities</p>
+                        </div>
+                    </div>
+                    <div class="smart-item">
+                        <div class="smart-letter purple-text">T</div>
+                        <div class="smart-content">
+                            <h6 class="white-text">Time-bound</h6>
+                            <p class="grey-text text-lighten-2">Set a deadline for achievement</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col s12 m6">
+        <div class="glass-card">
+            <div class="card-header">
+                <h5 class="white-text">
+                    <i class="material-icons left">star</i>Goal Ideas
+                </h5>
+            </div>
+            <div class="card-content">
+                <div class="goal-ideas">
+                    <div class="idea-item">
+                        <div class="idea-icon">
+                            <i class="material-icons cyan-text">check_circle</i>
+                        </div>
+                        <div class="idea-content">
+                            <h6 class="white-text">Medication Adherence</h6>
+                            <p class="grey-text text-lighten-2">Achieve 95% adherence for 30 days</p>
+                            <a href="#!" class="btn-flat cyan-text">Use This Goal</a>
+                        </div>
+                    </div>
+                    <div class="idea-item">
+                        <div class="idea-icon">
+                            <i class="material-icons red-text">favorite</i>
+                        </div>
+                        <div class="idea-content">
+                            <h6 class="white-text">Blood Pressure</h6>
+                            <p class="grey-text text-lighten-2">Maintain BP below 130/80 for 2 weeks</p>
+                            <a href="#!" class="btn-flat red-text">Use This Goal</a>
+                        </div>
+                    </div>
+                    <div class="idea-item">
+                        <div class="idea-icon">
+                            <i class="material-icons green-text">mood</i>
+                        </div>
+                        <div class="idea-content">
+                            <h6 class="white-text">Symptom Management</h6>
+                            <p class="grey-text text-lighten-2">Reduce severe symptoms by 50%</p>
+                            <a href="#!" class="btn-flat green-text">Use This Goal</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goal Creation Modal -->
+<div id="goal-modal" class="modal glass-card-modal">
+    <div class="modal-content white-text">
+        <h4 class="center-align">Create New Goal</h4>
+        <p class="center-align grey-text text-lighten-2">Set a SMART goal for your health journey</p>
+        <div class="divider white-text" style="margin: 15px 0;"></div>
+        
+        <form id="goal-creation-form">
+            <div class="row">
+                <div class="col s12">
+                    <div class="input-field">
+                        <input id="goal-title" type="text" class="white-text" required>
+                        <label for="goal-title" class="white-text">Goal Title</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s12 m6">
+                    <div class="input-field">
+                        <select id="goal-type" class="white-text" required>
+                            <option value="" disabled selected>Choose goal type</option>
+                            <option value="adherence">Medication Adherence</option>
+                            <option value="vitals">Vital Signs</option>
+                            <option value="symptoms">Symptom Management</option>
+                            <option value="lifestyle">Lifestyle</option>
+                            <option value="weight">Weight Management</option>
+                        </select>
+                        <label class="white-text">Goal Type</label>
+                    </div>
+                </div>
+                <div class="col s12 m6">
+                    <div class="input-field">
+                        <select id="goal-timeframe" class="white-text" required>
+                            <option value="" disabled selected>Choose timeframe</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                        <label class="white-text">Timeframe</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s12 m6">
+                    <div class="input-field">
+                        <input id="goal-target" type="text" class="white-text" required>
+                        <label for="goal-target" class="white-text">Target Value (e.g., 95%, 130/80)</label>
+                    </div>
+                </div>
+                <div class="col s12 m6">
+                    <div class="input-field">
+                        <input id="goal-current" type="text" class="white-text" required>
+                        <label for="goal-current" class="white-text">Current Value</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s6">
+                    <div class="input-field">
+                        <input id="goal-start" type="text" class="datepicker white-text" required>
+                        <label for="goal-start" class="white-text">Start Date</label>
+                    </div>
+                </div>
+                <div class="col s6">
+                    <div class="input-field">
+                        <input id="goal-end" type="text" class="datepicker white-text">
+                        <label for="goal-end" class="white-text">End Date (Optional)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s12">
+                    <div class="input-field">
+                        <textarea id="goal-description" class="materialize-textarea white-text"></textarea>
+                        <label for="goal-description" class="white-text">Goal Description</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col s12">
+                    <p>
+                        <label>
+                            <input type="checkbox" class="filled-in" checked />
+                            <span class="white-text">Enable reminders for this goal</span>
+                        </label>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="center-align" style="margin-top: 30px;">
+                <button type="submit" class="btn waves-effect waves-light cyan darken-2">
+                    <i class="material-icons left">check</i>Create Goal
+                </button>
+                <a href="#!" class="modal-close btn-flat white-text" style="margin-left: 10px;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.progress-summary {
+    padding: 30px 20px;
+    border-radius: 20px;
+}
+
+.summary-icon {
+    margin-bottom: 20px;
+}
+
+.progress-stats {
+    margin-top: 20px;
+}
+
+.progress-stats .stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progress-stats .stat-item:last-child {
+    border-bottom: none;
+}
+
+.goal-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.category-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.category-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.category-icon i {
+    font-size: 30px;
+}
+
+.category-progress {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.progress-value {
+    min-width: 40px;
+    text-align: right;
+}
+
+.goal-filters {
+    display: flex;
+    gap: 10px;
+}
+
+.goal-filters .btn-flat.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+}
+
+.goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.goal-item {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.goal-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.goal-item.on_track {
+    border-left-color: #4CAF50;
+}
+
+.goal-item.needs_attention {
+    border-left-color: #FF9800;
+}
+
+.goal-item.completed {
+    border-left-color: #2196F3;
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.goal-type {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    color: white;
+}
+
+.status-badge.on_track {
+    background: #4CAF50;
+}
+
+.status-badge.needs_attention {
+    background: #FF9800;
+}
+
+.status-badge.completed {
+    background: #2196F3;
+}
+
+.goal-content {
+    margin: 15px 0;
+}
+
+.goal-progress {
+    margin: 20px 0;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.goal-timeline {
+    margin: 20px 0;
+}
+
+.timeline {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 40px;
+}
+
+.timeline-start,
+.timeline-end {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80px;
+}
+
+.timeline-progress {
+    flex-grow: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    position: relative;
+    margin: 0 10px;
+}
+
+.progress-dot {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    background: #03a9f4;
+    border-radius: 50%;
+    border: 3px solid white;
+}
+
+.goal-actions {
+    display: flex;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.empty-goals {
+    padding: 40px 20px;
+}
+
+.goal-history {
+    padding: 20px 0;
+}
+
+.history-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    border-left: 4px solid transparent;
+}
+
+.timeline-item.completed {
+    border-left-color: #4CAF50;
+}
+
+.timeline-item.on_track {
+    border-left-color: #03a9f4;
+}
+
+.timeline-item.needs_attention {
+    border-left-color: #FF9800;
+}
+
+.timeline-icon i {
+    font-size: 30px;
+}
+
+.timeline-content {
+    flex-grow: 1;
+}
+
+.timeline-meta {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    align-items: center;
+}
+
+.smart-goals {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.smart-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.smart-letter {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.smart-content {
+    flex-grow: 1;
+}
+
+.goal-ideas {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.idea-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.idea-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.idea-icon i {
+    font-size: 30px;
+}
+
+.idea-content {
+    flex-grow: 1;
+}
+
+/* Modal styling */
+.glass-card-modal {
+    background: rgba(30, 30, 46, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card-modal .modal-content {
+    padding: 30px;
+}
+
+.glass-card-modal .input-field input,
+.glass-card-modal .input-field textarea {
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-card-modal .input-field input:focus,
+.glass-card-modal .input-field textarea:focus {
+    border-bottom: 1px solid #03a9f4;
+    box-shadow: 0 1px 0 0 #03a9f4;
+}
+
+.glass-card-modal .input-field label {
+    color: #B0BEC5 !important;
+}
+
+.glass-card-modal .input-field input:focus + label,
+.glass-card-modal .input-field textarea:focus + label {
+    color: #03a9f4 !important;
+}
+
+.glass-card-modal .select-wrapper input.select-dropdown {
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-card-modal .select-wrapper input.select-dropdown:focus {
+    border-bottom: 1px solid #03a9f4;
+}
+
+.glass-card-modal .dropdown-content {
+    background: rgba(30, 30, 46, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card-modal .dropdown-content li > span {
+    color: white;
+}
+
+.glass-card-modal .dropdown-content li:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .goal-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .goal-actions {
+        flex-wrap: wrap;
+    }
+    
+    .category-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .category-progress {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize modals
+    var modalElems = document.querySelectorAll('.modal');
+    M.Modal.init(modalElems, {
+        dismissible: false
+    });
+    
+    // Initialize select
+    var selectElems = document.querySelectorAll('select');
+    M.FormSelect.init(selectElems);
+    
+    // Initialize date pickers
+    var datepickerElems = document.querySelectorAll('.datepicker');
+    M.Datepicker.init(datepickerElems, {
+        format: 'yyyy-mm-dd',
+        autoClose: true,
+        showClearBtn: true,
+        i18n: {
+            clear: 'Clear',
+            done: 'OK',
+            cancel: 'Cancel'
+        }
+    });
+    
+    // Goal filtering
+    const filterButtons = document.querySelectorAll('.goal-filters .btn-flat');
+    const goalItems = document.querySelectorAll('.goal-item');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get filter value
+            const filter = this.dataset.filter;
+            
+            // Filter goals
+            goalItems.forEach(item => {
+                if (filter === 'all' || item.classList.contains(filter)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Goal creation form
+    const goalForm = document.getElementById('goal-creation-form');
+    if (goalForm) {
+        goalForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const title = document.getElementById('goal-title').value;
+            const type = document.getElementById('goal-type').value;
+            const timeframe = document.getElementById('goal-timeframe').value;
+            const target = document.getElementById('goal-target').value;
+            const current = document.getElementById('goal-current').value;
+            
+            // Create goal object
+            const goal = {
+                title: title,
+                type: type,
+                timeframe: timeframe,
+                target: target,
+                current: current,
+                progress: Math.round((parseFloat(current) / parseFloat(target)) * 100) || 0,
+                status: 'on_track',
+                start_date: document.getElementById('goal-start').value || new Date().toISOString().split('T')[0],
+                end_date: document.getElementById('goal-end').value
+            };
+            
+            // In a real app, this would make an API call
+            // For demo, show success message
+            M.toast({html: `Goal "${title}" created successfully!`, classes: 'green'});
+            
+            // Close modal
+            const modal = M.Modal.getInstance(document.getElementById('goal-modal'));
+            modal.close();
+            
+            // Reset form
+            goalForm.reset();
+            M.FormSelect.init(document.querySelectorAll('select'));
+            
+            // Refresh page after a delay (in real app, would update UI without refresh)
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        });
+    }
+    
+    // Update goal progress
+    const updateButtons = document.querySelectorAll('.update-goal');
+    updateButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const goalId = this.dataset.id;
+            const newValue = prompt('Enter new current value:');
+            
+            if (newValue !== null) {
+                // In a real app, this would make an API call
+                M.toast({html: 'Progress updated successfully!', classes: 'green'});
+                
+                // Update UI
+                const goalItem = this.closest('.goal-item');
+                const progressText = goalItem.querySelector('.progress-info span:last-child');
+                const progressBar = goalItem.querySelector('.determinate');
+                const progressDot = goalItem.querySelector('.progress-dot');
+                
+                // Calculate new progress (simplified)
+                const currentProgress = parseInt(progressText.textContent);
+                const newProgress = Math.min(currentProgress + 10, 100);
+                
+                progressText.textContent = `${newProgress}%`;
+                progressText.className = newProgress >= 80 ? 'green-text' : newProgress >= 50 ? 'orange-text' : 'red-text';
+                
+                progressBar.style.width = `${newProgress}%`;
+                progressBar.className = `determinate ${newProgress >= 80 ? 'green' : newProgress >= 50 ? 'orange' : 'red'}`;
+                
+                progressDot.style.left = `${newProgress}%`;
+                
+                // Update status if needed
+                if (newProgress >= 100) {
+                    const statusBadge = goalItem.querySelector('.status-badge');
+                    statusBadge.textContent = 'Completed';
+                    statusBadge.className = 'status-badge completed';
+                    goalItem.classList.remove('on_track', 'needs_attention');
+                    goalItem.classList.add('completed');
+                }
+            }
+        });
+    });
+    
+    // Log progress
+    const logButtons = document.querySelectorAll('.log-progress');
+    logButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const goalId = this.dataset.id;
+            const entry = prompt('Log your progress for today:');
+            
+            if (entry !== null) {
+                M.toast({html: 'Progress logged successfully!', classes: 'green'});
+                
+                // In a real app, this would make an API call to log the entry
+                console.log(`Logged progress for goal ${goalId}: ${entry}`);
+            }
+        });
+    });
+    
+    // Use goal idea
+    const useIdeaButtons = document.querySelectorAll('.goal-ideas .btn-flat');
+    useIdeaButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const ideaItem = this.closest('.idea-item');
+            const title = ideaItem.querySelector('h6').textContent;
+            const description = ideaItem.querySelector('p').textContent;
+            
+            // Populate modal with idea
+            document.getElementById('goal-title').value = title;
+            document.getElementById('goal-description').value = description;
+            
+            // Open modal
+            const modal = M.Modal.getInstance(document.getElementById('goal-modal'));
+            modal.open();
+            
+            // Set focus on first empty field
+            setTimeout(() => {
+                document.getElementById('goal-target').focus();
+            }, 300);
+        });
+    });
+});
+</script>
+{% endblock %}
